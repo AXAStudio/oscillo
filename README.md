@@ -1,3 +1,8 @@
 # Oscillo
+Lightweight platform for basic portfolio tracking & paper trading.
 
-Database: Supabase (postgres)
+## Stack
+Frontend: NextJS<br>
+Backend: Python, FastAPI<br>
+Database: PostgreS (Supabase)<br>
+VM: Vercel
