@@ -1,12 +1,12 @@
 """
 Portfolios Service
 """
+import uuid
 
+from datetime import datetime
 from supabase import create_client
 
 from app.configs import config
-import uuid
-from datetime import datetime
 
 
 supabase = create_client(

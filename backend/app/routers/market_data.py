@@ -1,8 +1,7 @@
-import json
 import asyncio
 from fastapi import APIRouter, HTTPException
-import app.services.market_data as market_data
 
+import app.services.market_data as market_data
 
 router = APIRouter(
     prefix="/market-data",

@@ -1,10 +1,11 @@
 """
 Orders Service - adding, updating, and deleting order records
 """
-
-from supabase import create_client
-from app.configs import config
 from datetime import datetime
+from supabase import create_client
+
+from app.configs import config
+
 
 supabase = create_client(
     config.SUPABASE_URL,

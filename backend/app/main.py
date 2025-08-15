@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+
 from app.routers import market_data
 from app.routers import portfolios
 

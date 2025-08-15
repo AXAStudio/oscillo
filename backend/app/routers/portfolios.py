@@ -6,11 +6,17 @@ portfolios/{portfolio_id} - delete
 portfolios/{portfolio_id}/orders - get / post
 """
 
-from fastapi import APIRouter, Request, HTTPException, Body
-from app.dependencies.auth import get_current_user_id
-from app.services.portfolios import get_all_portfolios, create_portfolio, delete_portfolio
-from app.services.orders import create_order
 from pydantic import BaseModel
+from fastapi import APIRouter, Request, HTTPException, Body
+
+from app.services.orders import create_order
+from app.dependencies.auth import get_current_user_id
+from app.services.portfolios import (
+    get_all_portfolios,
+    create_portfolio,
+    delete_portfolio
+)
+
 
 
 router = APIRouter(prefix="/portfolios", tags=["Portfolios"])
