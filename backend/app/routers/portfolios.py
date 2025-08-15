@@ -6,14 +6,23 @@ portfolios/{portfolio_id} - delete
 portfolios/{portfolio_id}/orders - get / post
 """
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Request, HTTPException, Body
 from app.dependencies.auth import get_current_user_id
 from app.services.portfolios import get_all_portfolios, create_portfolio, delete_portfolio
 from app.services.orders import create_order
+from pydantic import BaseModel
 
 
 router = APIRouter(prefix="/portfolios", tags=["Portfolios"])
 
+class OrderRequest(BaseModel):
+    symbol: str
+    quantity: int
+    price: float
+
+class PortfolioRequest(BaseModel):
+    name: str
+    initial_investment: float
 
 @router.get("")
 async def list_portfolios(request: Request):
@@ -22,15 +31,15 @@ async def list_portfolios(request: Request):
 
 
 @router.post("")
-async def add_portfolio(request: Request, payload: dict):
+async def add_portfolio(request: Request, new_portfolio: PortfolioRequest = Body(...)):
     """
     Create a new portfolio for the authenticated user.
     Request body should include: name, initial_investment, capital.
     """
     user_id = get_current_user_id(request)
 
-    name = payload.get("name")
-    initial_investment = payload.get("initial_investment")
+    name = new_portfolio.name
+    initial_investment = new_portfolio.initial_investment
 
     if not name or initial_investment is None:
         raise HTTPException(
@@ -50,9 +59,7 @@ async def remove_portfolio(portfolio_id: str, request: Request):
 async def add_order(
     request: Request,
     portfolio_id: str,
-    symbol: str,
-    quantity: float,
-    price: float
+    order: OrderRequest = Body(...)
 ):
     """
     Create a new order (buy or sell) for a given portfolio.
@@ -60,7 +67,12 @@ async def add_order(
     try:
         get_current_user_id(request)
 
-        new_order = create_order(portfolio_id, symbol, quantity, price)
+        new_order = create_order(
+            portfolio_id,
+            order.symbol,
+            order.quantity,
+            order.price
+        )
         return {
             "status": "success",
             "order": new_order
