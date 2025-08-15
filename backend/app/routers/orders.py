@@ -1,5 +1,8 @@
 """
 Orders-Related Endpoints - Adding, updating, and deleting orders
+
+orders/ - get / post orders for an authenticated user
+orders/{order_id} - delete
 """
 
 from fastapi import APIRouter, Request, HTTPException
@@ -9,7 +12,8 @@ from app.services.orders import create_order
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
-@router.post("/create")
+
+@router.post("")
 async def add_order(
     request: Request,
     portfolio_id: str,
