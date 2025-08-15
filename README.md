@@ -2,7 +2,28 @@
 Lightweight platform for basic portfolio tracking & paper trading.
 
 ## Stack
-Frontend: NextJS<br>
-Backend: Python, FastAPI<br>
-Database: PostgreS (Supabase)<br>
-VM: Vercel
+
+#### Backend
+
+*   **Language:** Python
+*   **Framework:** FastAPI
+*   **Database:** PostgreSQL (Supabase)
+*   **Authentication:** Supabase Auth
+
+#### Frontend
+
+*   **Language:** TypeScript
+*   **Framework:** NextJS
+*   **Styling:** Tailwind CSS
+*   **Build Tool:** NPM
+
+#### Infrastructure & DevOps
+
+*   **Cloud Provider:** Vercel
+*   **Containerization:** Docker*
+*   **CI/CD:** GitHub Actions
+
+#### Other Tools
+
+*   **Version Control:** Git, GitHub
+*   **API Testing:** Postman
