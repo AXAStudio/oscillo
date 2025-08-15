@@ -3,7 +3,7 @@ Orders Service - adding, updating, and deleting order records
 """
 
 from supabase import create_client
-import app.config as config
+from app.configs import config
 from datetime import datetime
 
 supabase = create_client(
@@ -14,7 +14,7 @@ supabase = create_client(
 def create_order(portfolio_id: str, symbol: str, quantity: float, price: float):
     now = datetime.now().isoformat()
 
-    res = supabase.table(config.ORDERS_TABLE).insert({
+    res = supabase.table(config.DB_SCHEMA.ORDERS).insert({
         "portfolio_id": portfolio_id,
         "symbol": symbol.upper(),
         "quantity": quantity,

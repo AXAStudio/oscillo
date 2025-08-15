@@ -4,7 +4,7 @@ Portfolios Service
 
 from supabase import create_client
 
-import app.config as config
+from app.configs import config
 import uuid
 from datetime import datetime
 
@@ -21,7 +21,7 @@ def get_all_portfolios(user_id: str):
     """
     # Step 1: Get all portfolios for the user
     portfolios_res = supabase.table(
-        config.PORTFOLIOS_TABLE
+        config.DB_SCHEMA.PORTFOLIOS
     ).select("*").eq("user_id", user_id).execute()
 
     portfolios = portfolios_res.data
@@ -32,7 +32,7 @@ def get_all_portfolios(user_id: str):
     # Step 2: For each portfolio, fetch tickers and append them
     for portfolio in portfolios:
         tickers_res = supabase.table(
-            config.ORDERS_TABLE
+            config.DB_SCHEMA.ORDERS
         ).select("*").eq(
             "portfolio_id", portfolio["id"]
         ).execute()
@@ -69,13 +69,13 @@ def delete_portfolio(user_id: str, portfolio_id: str):
     Also removes all associated tickers/orders.
     """
     # First delete any related tickers/orders
-    supabase.table(config.ORDERS_TABLE) \
+    supabase.table(config.DB_SCHEMA.ORDERS) \
         .delete() \
         .eq("portfolio_id", portfolio_id) \
         .execute()
 
     # Then delete the portfolio itself (scoped by user_id for safety)
-    res = supabase.table(config.PORTFOLIOS_TABLE) \
+    res = supabase.table(config.DB_SCHEMA.PORTFOLIOS) \
         .delete() \
         .eq("id", portfolio_id) \
         .eq("user_id", user_id) \

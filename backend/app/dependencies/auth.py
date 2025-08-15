@@ -1,6 +1,7 @@
-from fastapi import Request, HTTPException
 import requests
-from app.config import SUPABASE_URL, SUPABASE_SERVICE_KEY
+from fastapi import Request, HTTPException
+
+from app.configs import config
 
 def get_current_user_id(request: Request) -> str:
     auth_header = request.headers.get("Authorization")
@@ -10,8 +11,8 @@ def get_current_user_id(request: Request) -> str:
     token = auth_header.split(" ")[1]
 
     res = requests.get(
-        f"{SUPABASE_URL}/auth/v1/user",
-        headers={"Authorization": f"Bearer {token}", "apikey": SUPABASE_SERVICE_KEY}
+        f"{config.SUPABASE_URL}/auth/v1/user",
+        headers={"Authorization": f"Bearer {token}", "apikey": config.SUPABASE_SERVICE_KEY}
     )
 
     if res.status_code != 200:
