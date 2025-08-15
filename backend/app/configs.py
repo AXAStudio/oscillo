@@ -13,6 +13,7 @@ class DBSchema:
         self.USERS = "users"
         self.PORTFOLIOS = "portfolios"
         self.ORDERS = "orders"
+        self.POSITIONS = "positions"
 
 
 class Config:
