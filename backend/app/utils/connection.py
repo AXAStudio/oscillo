@@ -1,3 +1,3 @@
 """
-Database connection utilss
+Database connection utils
 """
