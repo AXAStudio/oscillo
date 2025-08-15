@@ -53,7 +53,6 @@ def create_portfolio(user_id: str, name: str, initial_investment: float):
         "user_id": user_id,
         "name": name,
         "initial_investment": initial_investment,
-        "capital": initial_investment,
         "created_at": now,
         "last_updated": now
     }).execute()

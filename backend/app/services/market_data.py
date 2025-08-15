@@ -4,9 +4,11 @@ Market data endpoints.
 
 import time
 import asyncio
-from typing import Dict, Any
+
 import pandas as pd
 import yfinance as yf
+
+from typing import Dict, Any
 
 # Cache per unique ticker set
 _cache: Dict[str, Dict[str, Any]] = {}

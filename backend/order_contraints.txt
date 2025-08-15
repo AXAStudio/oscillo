@@ -1,0 +1,14 @@
+Orders
+
+Market Orders
+- buy / sell
+- Impact on associated portfolio: 
+cant buy stocks you dont have the money for
+cant sell stocks you dont have the inventory for
+- -
+
+
+Capital Orders
+- Deposit / withdrawal
+- Impact on associated portfolio:
+- - 
