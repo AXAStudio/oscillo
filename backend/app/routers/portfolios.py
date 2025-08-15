@@ -18,17 +18,19 @@ from app.services.portfolios import (
 )
 
 
-
 router = APIRouter(prefix="/portfolios", tags=["Portfolios"])
+
 
 class OrderRequest(BaseModel):
     symbol: str
     quantity: int
     price: float
 
+
 class PortfolioRequest(BaseModel):
     name: str
     initial_investment: float
+
 
 @router.get("")
 async def list_portfolios(request: Request):

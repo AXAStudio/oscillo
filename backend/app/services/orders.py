@@ -12,6 +12,7 @@ supabase = create_client(
     config.SUPABASE_SERVICE_KEY
 )
 
+
 def create_order(portfolio_id: str, symbol: str, quantity: int, price: float):
     now = datetime.now().isoformat()
 

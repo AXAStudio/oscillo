@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException
 
 import app.services.market_data as market_data
 
+
 router = APIRouter(
     prefix="/market-data",
     tags=["Market Data"],

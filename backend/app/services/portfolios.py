@@ -41,6 +41,7 @@ def get_all_portfolios(user_id: str):
 
     return portfolios
 
+
 def create_portfolio(user_id: str, name: str, initial_investment: float):
     """
     Insert a new portfolio into the portfolios table with initial capital.
@@ -61,6 +62,7 @@ def create_portfolio(user_id: str, name: str, initial_investment: float):
         raise Exception(f"Failed to create portfolio: {res}")
 
     return res.data[0]
+
 
 def delete_portfolio(user_id: str, portfolio_id: str):
     """

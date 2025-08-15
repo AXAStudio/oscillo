@@ -10,6 +10,7 @@ import yfinance as yf
 
 from typing import Dict, Any
 
+
 # Cache per unique ticker set
 _cache: Dict[str, Dict[str, Any]] = {}
 CACHE_TTL = 30  # seconds
