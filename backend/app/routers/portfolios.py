@@ -14,7 +14,8 @@ from app.utils.auth import get_current_user_id
 from app.services.portfolios import (
     get_all_portfolios,
     create_portfolio,
-    delete_portfolio
+    delete_portfolio,
+    get_all_orders
 )
 from app.services.positions import get_all_positions
 
@@ -101,6 +102,26 @@ async def get_positions(
         get_current_user_id(request)
 
         pos = get_all_positions(portfolio_id)
+
+        return {
+            "status": "success",
+            "positions": pos
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+
+@router.get("/{portfolio_id}/orders")
+async def get_positions(
+    request: Request,
+    portfolio_id: str,
+):
+    try:
+        get_current_user_id(request)
+
+        pos = get_all_orders(portfolio_id)
 
         return {
             "status": "success",

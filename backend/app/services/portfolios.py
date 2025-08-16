@@ -94,3 +94,14 @@ def delete_portfolio(user_id: str, portfolio_id: str):
     return {"message": f"Portfolio {portfolio_id} deleted successfully"}
 
 
+def get_all_orders(portfolio_id: str):
+    """
+    Fetch Orders for a given portfolio
+    """
+    tickers_res = supabase.table(
+        config.DB_SCHEMA.ORDERS
+    ).select("*").eq(
+        "portfolio_id", portfolio_id
+    ).execute()
+    
+    return tickers_res.data
