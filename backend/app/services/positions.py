@@ -13,5 +13,13 @@ supabase = create_client(
 )
 
 def get_all_positions(portfolio_id: str):
-    tickers_res = supabase.table(config.DB_SCHEMA.POSITIONS).select("*").eq("portfolio_id", portfolio_id).execute()
+    """
+    Fetch Positions for a given portfolio
+    """
+    tickers_res = supabase.table(
+        config.DB_SCHEMA.POSITIONS
+    ).select("*").eq(
+        "portfolio_id", portfolio_id
+    ).execute()
+    
     return tickers_res.data
