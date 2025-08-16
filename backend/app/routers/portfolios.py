@@ -16,13 +16,14 @@ from app.services.portfolios import (
     create_portfolio,
     delete_portfolio
 )
+from app.services.positions import get_all_positions
 
 
 router = APIRouter(prefix="/portfolios", tags=["Portfolios"])
 
 
 class OrderRequest(BaseModel):
-    symbol: str
+    ticker: str
     quantity: int
     price: float
 
@@ -77,13 +78,33 @@ async def add_order(
 
         new_order = create_order(
             portfolio_id,
-            order.symbol,
+            order.ticker,
             order.quantity,
             order.price
         )
         return {
             "status": "success",
             "order": new_order
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{portfolio_id}/positions")
+async def get_positions(
+    request: Request,
+    portfolio_id: str,
+):
+    try:
+        get_current_user_id(request)
+
+        pos = get_all_positions(portfolio_id)
+
+        return {
+            "status": "success",
+            "positions": pos
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))

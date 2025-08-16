@@ -13,12 +13,12 @@ supabase = create_client(
 )
 
 
-def create_order(portfolio_id: str, symbol: str, quantity: int, price: float):
+def create_order(portfolio_id: str, ticker: str, quantity: int, price: float):
     now = datetime.now().isoformat()
 
     res = supabase.table(config.DB_SCHEMA.ORDERS).insert({
         "portfolio_id": portfolio_id,
-        "symbol": symbol.upper(),
+        "ticker": ticker.upper(),
         "quantity": quantity,
         "price": price,
         "timestamp": now,
@@ -28,7 +28,7 @@ def create_order(portfolio_id: str, symbol: str, quantity: int, price: float):
         "increment_quantity",
         {
             "p_portfolio_id": portfolio_id,
-            "p_ticker": symbol.upper(),
+            "p_ticker": ticker.upper(),
             "p_quantity": quantity,
         }
     ).execute()

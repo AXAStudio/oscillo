@@ -3,6 +3,7 @@ from fastapi import Request, HTTPException
 
 from app.configs import config
 
+
 def get_current_user_id(request: Request) -> str:
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
