@@ -31,7 +31,6 @@ class OrderRequest(BaseModel):
 
 class PortfolioRequest(BaseModel):
     name: str
-    initial_investment: float
 
 
 @router.get("")
@@ -49,15 +48,14 @@ async def add_portfolio(request: Request, new_portfolio: PortfolioRequest = Body
     user_id = get_current_user_id(request)
 
     name = new_portfolio.name
-    initial_investment = new_portfolio.initial_investment
 
-    if not name or initial_investment is None:
+    if not name:
         raise HTTPException(
             status_code=400,
             detail="Missing required fields: name, initial_investment"
         )
 
-    return create_portfolio(user_id, name, initial_investment)
+    return create_portfolio(user_id, name)
 
 
 @router.delete("/{portfolio_id}")

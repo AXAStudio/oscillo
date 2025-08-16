@@ -44,7 +44,7 @@ def get_all_portfolios(user_id: str):
     return portfolios
 
 
-def create_portfolio(user_id: str, name: str, initial_investment: float):
+def create_portfolio(user_id: str, name: str):
     """
     Insert a new portfolio into the portfolios table with initial capital.
     """
@@ -55,8 +55,6 @@ def create_portfolio(user_id: str, name: str, initial_investment: float):
         id=portfolio_id,
         user_id=user_id,
         name=name,
-        initial_investment=initial_investment,
-        created_at=now,
         last_updated=now
     ).verify()
 
