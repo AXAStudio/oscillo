@@ -1,10 +1,18 @@
 Orders
 
 Market Orders
-- buy / sell
+ - Buy Order
+    - Positive quantity
+    - Decreases Capital
+    - Increases holdings of the target stock
+ - Sell Order
+    - Negative quantity
+    - Increases capital
+    - Decreases holdings of the target stock
+ 
 - Impact on associated portfolio: 
-cant buy stocks you dont have the money for
-cant sell stocks you dont have the inventory for
+    - cannot buy if:  price * quantity > capital
+    - cannot sell if: quantity_to_sell > owned_quantity
 - -
 
 
@@ -12,3 +20,17 @@ Capital Orders
 - Deposit / withdrawal
 - Impact on associated portfolio:
 - - 
+
+
+
+
+
+# When you open portfolio
+- main visual is a graph
+- - cache for 10 minutes
+- - portfolio redis
+- Data Needed: (2 api calls)
+- - portfolio metadata
+- - portfolio value history
+- - value history for each ticker
+- - current % of portfolio breakdown - one api call
