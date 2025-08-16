@@ -2,6 +2,7 @@
 Positions Management Service
 """
 
+from typing import Dict, Any
 from supabase import create_client
 
 from app.configs import config
@@ -12,14 +13,16 @@ supabase = create_client(
     config.SUPABASE_SERVICE_KEY
 )
 
-def get_all_positions(portfolio_id: str):
+
+def get_portfolio_positions(portfolio_id: str) -> Dict[str, Any]:
     """
-    Fetch Positions for a given portfolio
+    Returns: { "<TICKER>": { ...all row fields incl. portfolio_id } }
     """
-    tickers_res = supabase.table(
-        config.DB_SCHEMA.POSITIONS
-    ).select("*").eq(
-        "portfolio_id", portfolio_id
-    ).execute()
-    
-    return tickers_res.data
+    res = supabase.table(config.DB_SCHEMA.POSITIONS)\
+        .select("ticker, portfolio_id, quantity, created_at, updated_at")\
+        .eq("portfolio_id", portfolio_id)\
+        .execute()
+
+    items = res.data or []
+
+    return {row["ticker"]: row for row in items if row.get("ticker")}

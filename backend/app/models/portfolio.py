@@ -2,7 +2,7 @@
 Portfolio Model
 """
 
-from .db import BaseModel
+from .base import BaseModel
 
 
 class Portfolio(BaseModel):
@@ -14,16 +14,16 @@ class Portfolio(BaseModel):
             id: str = None,
             user_id: str = None,
             name: str = None,
-            initial_investment: float = None,
             created_at: str = None,
-            last_updated: str = None
+            last_updated: str = None,
+            cash: int = None
         ):
         self.id = id
         self.user_id = user_id
         self.name = name
-        self.initial_investment = initial_investment
         self.created_at = created_at
         self.last_updated = last_updated
+        self.cash = cash
 
     def verify(self) -> 'Portfolio':
         """
@@ -31,8 +31,5 @@ class Portfolio(BaseModel):
         """
         if not self.name:  # accounts for empty strings
             self.name = "Unnamed Portfolio"
-
-        if self.initial_investment < 0:
-            raise ValueError("Initial investment cannot be negative")
         
         return self

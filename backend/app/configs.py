@@ -4,7 +4,16 @@ API Configs
 
 import os
 
-from app.models import DBSchema
+
+class DBSchema:
+    """
+    Database Schema
+    """
+    def __init__(self):
+        self.USERS = "users"
+        self.PORTFOLIOS = "portfolios"
+        self.ORDERS = "orders"
+        self.POSITIONS = "positions"
 
 
 class Config:
@@ -16,6 +25,7 @@ class Config:
         self.SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
         self.SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
         self.DB_SCHEMA = DBSchema()
+        self.LOGGER = 'uvicorn.error'
 
 
 class DevConfig(Config):

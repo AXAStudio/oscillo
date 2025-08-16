@@ -5,23 +5,12 @@ Database models
 from abc import ABC, abstractmethod
 
 
-class DBSchema:
-    """
-    Database Schema
-    """
-    def __init__(self):
-        self.USERS = "users"
-        self.PORTFOLIOS = "portfolios"
-        self.ORDERS = "orders"
-        self.POSITIONS = "positions"
-
-
 class BaseModel(ABC):
     """
     Base Data Model
     """
     @abstractmethod
-    def verify(self) -> 'BaseModel':
+    def verify(self, *args) -> 'BaseModel':
         """
         Verify the model's data integrity
         """
@@ -40,3 +29,8 @@ class BaseModel(ABC):
                 and v is not None
             )
         }
+
+    def __str__(self):
+        return f"{self.__class__.__name__}({', '.join([
+            f'{attr}={val}' for attr, val in self.raw.items()
+        ])})"

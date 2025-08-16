@@ -6,11 +6,13 @@ portfolios/{portfolio_id} - delete
 portfolios/{portfolio_id}/orders - get / post
 """
 
+from typing import Optional
 from pydantic import BaseModel
 from fastapi import APIRouter, Request, HTTPException, Body
 
+from app.utils.logger import setup_logger
 from app.utils.auth import get_current_user_id
-from app.services.positions import get_all_positions
+from app.services.positions import get_portfolio_positions
 from app.services.orders import create_order, get_all_orders
 from app.services.portfolios import (
     get_all_portfolios,
@@ -21,6 +23,7 @@ from app.services.portfolios import (
 
 
 router = APIRouter(prefix="/portfolios", tags=["Portfolios"])
+_logger = setup_logger()
 
 
 class OrderRequest(BaseModel):
@@ -106,8 +109,10 @@ async def add_order(
     Create a new order (buy or sell) for a given portfolio.
     """
     try:
+        _logger.info("Verifying user...")
         get_current_user_id(request)
 
+        _logger.info("Creating order...")
         new_order = create_order(
             portfolio_id,
             order.ticker,
@@ -132,7 +137,7 @@ async def get_positions(
     try:
         get_current_user_id(request)
 
-        pos = get_all_positions(portfolio_id)
+        pos = get_portfolio_positions(portfolio_id)
 
         return {
             "status": "success",

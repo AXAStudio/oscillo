@@ -34,3 +34,10 @@ Capital Orders
 - - portfolio value history
 - - value history for each ticker
 - - current % of portfolio breakdown - one api call
+
+
+
+
+# todo
+- try and excepts on all endpoints
+- docstrings on all functions -> clearly show inputs and outputs structure / format
