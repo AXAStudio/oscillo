@@ -2,10 +2,12 @@
 Portfolio Aggregation Utils
 """
 
+from __future__ import annotations
+
 import pandas as pd
 from datetime import datetime
 
-from .portfolios import get_all_orders
+from .orders import get_all_orders
 from .market_data import fetch_full_data
 from app.utils.timestamps import parse_timestamptz
 
@@ -97,7 +99,7 @@ def _prices_df(prices_dict: Dict[str, pd.DataFrame]) -> pd.DataFrame:
 
 
 
-from __future__ import annotations
+
 
 from datetime import datetime, timezone
 from typing import Dict, List, Any, Optional

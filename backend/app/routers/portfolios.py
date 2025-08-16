@@ -9,16 +9,15 @@ portfolios/{portfolio_id}/orders - get / post
 from pydantic import BaseModel
 from fastapi import APIRouter, Request, HTTPException, Body
 
-from app.services.orders import create_order
 from app.utils.auth import get_current_user_id
+from app.services.positions import get_all_positions
+from app.services.orders import create_order, get_all_orders
 from app.services.portfolios import (
     get_all_portfolios,
     create_portfolio,
     delete_portfolio,
-    get_all_orders,
     get_portfolio_data
 )
-from app.services.positions import get_all_positions
 
 
 router = APIRouter(prefix="/portfolios", tags=["Portfolios"])

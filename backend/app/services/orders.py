@@ -1,5 +1,5 @@
 """
-Orders Service - adding, updating, and deleting order records
+Orders Service - searching, adding, updating, and deleting order records
 """
 from datetime import datetime
 from supabase import create_client
@@ -42,6 +42,7 @@ def create_order(portfolio_id: str, ticker: str, quantity: int, price: float):
 
     return res.data[0]
 
+
 def get_all_tickers(portfolio_id: str):
     orders_res = (
         supabase.table(config.DB_SCHEMA.ORDERS)
@@ -54,24 +55,15 @@ def get_all_tickers(portfolio_id: str):
 
     return unique_tickers
 
-from datetime import datetime
-from zoneinfo import ZoneInfo  # Python 3.9+
 
-def parse_timestamptz(ts: str, to_tz: str | None = None, naive: bool = False) -> datetime:
+def get_all_orders(portfolio_id: str):
     """
-    Parse an ISO 8601 timestamptz like '2025-08-15T22:42:45.581734+00:00'
-    into a datetime. Returns timezone-aware by default.
-
-    Args:
-        ts: timestamp string
-        to_tz: optional IANA tz name to convert to (e.g., 'America/New_York')
-        naive: if True, drop tzinfo before returning
-
+    Fetch Orders for a given portfolio
     """
-    # Handle both '+00:00' and 'Z'
-    dt = datetime.fromisoformat(ts.replace('Z', '+00:00'))
-    if to_tz:
-        dt = dt.astimezone(ZoneInfo(to_tz))
-    if naive:
-        dt = dt.replace(tzinfo=None)
-    return dt
+    tickers_res = supabase.table(
+        config.DB_SCHEMA.ORDERS
+    ).select("*").eq(
+        "portfolio_id", portfolio_id
+    ).execute()
+    
+    return tickers_res.data

@@ -69,7 +69,6 @@ def get_portfolio_data(
     return portfolio
     
 
-
 def create_portfolio(user_id: str, name: str):
     """
     Insert a new portfolio into the portfolios table with initial capital.
@@ -116,16 +115,3 @@ def delete_portfolio(user_id: str, portfolio_id: str):
         raise Exception(f"Portfolio {portfolio_id} not found or could not be deleted")
 
     return {"message": f"Portfolio {portfolio_id} deleted successfully"}
-
-
-def get_all_orders(portfolio_id: str):
-    """
-    Fetch Orders for a given portfolio
-    """
-    tickers_res = supabase.table(
-        config.DB_SCHEMA.ORDERS
-    ).select("*").eq(
-        "portfolio_id", portfolio_id
-    ).execute()
-    
-    return tickers_res.data
