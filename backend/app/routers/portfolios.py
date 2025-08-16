@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from fastapi import APIRouter, Request, HTTPException, Body
 
 from app.services.orders import create_order
-from app.dependencies.auth import get_current_user_id
+from app.utils.auth import get_current_user_id
 from app.services.portfolios import (
     get_all_portfolios,
     create_portfolio,

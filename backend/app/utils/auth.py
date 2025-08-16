@@ -1,3 +1,7 @@
+"""
+Auth Utils
+"""
+
 import requests
 from fastapi import Request, HTTPException
 

@@ -88,4 +88,3 @@ async def fetch_last_single(ticker: str, period: str, interval: str, timeout: in
         return None
     except Exception:
         return None
-
