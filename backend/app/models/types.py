@@ -16,7 +16,7 @@ class OrderType(Enum):
         return self.value
 
 
-class TradeType(OrderType):
+class TradeType(Enum):
     """
     Enum for Trade Types
     """
@@ -27,7 +27,7 @@ class TradeType(OrderType):
         return self.value
 
 
-class TransferType(OrderType):
+class TransferType(Enum):
     """
     Enum for Transfer Types
     """
