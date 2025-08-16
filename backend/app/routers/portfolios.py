@@ -65,6 +65,27 @@ async def remove_portfolio(portfolio_id: str, request: Request):
     user_id = get_current_user_id(request)
     return delete_portfolio(user_id, portfolio_id)
 
+
+@router.get("/{portfolio_id}/orders")
+async def get_orders(
+    request: Request,
+    portfolio_id: str,
+):
+    try:
+        get_current_user_id(request)
+
+        pos = get_all_orders(portfolio_id)
+
+        return {
+            "status": "success",
+            "orders": pos
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.post("/{portfolio_id}/orders")
 async def add_order(
     request: Request,
@@ -102,26 +123,6 @@ async def get_positions(
         get_current_user_id(request)
 
         pos = get_all_positions(portfolio_id)
-
-        return {
-            "status": "success",
-            "positions": pos
-        }
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
-
-@router.get("/{portfolio_id}/orders")
-async def get_positions(
-    request: Request,
-    portfolio_id: str,
-):
-    try:
-        get_current_user_id(request)
-
-        pos = get_all_orders(portfolio_id)
 
         return {
             "status": "success",
