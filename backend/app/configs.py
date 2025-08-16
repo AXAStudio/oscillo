@@ -4,7 +4,7 @@ API Configs
 
 import os
 
-from app.core import DBSchema
+from app.models import DBSchema
 
 
 class Config:
