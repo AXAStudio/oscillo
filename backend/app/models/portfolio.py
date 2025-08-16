@@ -24,3 +24,15 @@ class Portfolio(BaseModel):
         self.initial_investment = initial_investment
         self.created_at = created_at
         self.last_updated = last_updated
+
+    def verify(self) -> 'Portfolio':
+        """
+        Verify Portfolio: returns self for chaining
+        """
+        if not self.name:  # accounts for empty strings
+            self.name = "Unnamed Portfolio"
+
+        if self.initial_investment < 0:
+            raise ValueError("Initial investment cannot be negative")
+        
+        return self

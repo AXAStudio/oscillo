@@ -5,7 +5,7 @@ Orders Service - adding, updating, and deleting order records
 from datetime import datetime
 from supabase import create_client
 
-from app.core import BaseOrder
+from app.models import BaseOrder
 from app.configs import config
 
 

@@ -27,3 +27,9 @@ Lightweight platform for basic portfolio tracking & paper trading.
 
 *   **Version Control:** Git, GitHub
 *   **API Testing:** Postman
+
+## TODO
+
+* Add RLS for supabase
+* Ensure defaults are properly added for supabase
+* Endpoints for price history at portfolio level & asset level

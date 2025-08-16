@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime
 from supabase import create_client
 
-from app.core import Portfolio
+from app.models import Portfolio
 from app.configs import config
 
 
