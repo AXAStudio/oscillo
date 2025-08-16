@@ -3,6 +3,7 @@ Order Models
 """
 
 from .db import BaseModel
+from app.utils.market_data import verify_ticker
 from .types import (
     OrderType,
     TradeType,
@@ -29,6 +30,18 @@ class BaseOrder(BaseModel):
         self.quantity = quantity
         self.price = price
         self.created_at = created_at
+
+    def verify(self) -> 'BaseOrder':
+        """
+        Verify Order: returns self for chaining
+        """
+        if self.quantity == 0:
+            raise ValueError("Order quantity cannot be 0")
+        
+        if not verify_ticker(self.ticker):
+            raise ValueError("Ticker not found")
+
+        return self
 
 
 class Trade(BaseOrder):

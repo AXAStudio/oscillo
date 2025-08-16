@@ -2,6 +2,9 @@
 Database models
 """
 
+from abc import ABC, abstractmethod
+
+
 class DBSchema:
     """
     Database Schema
@@ -13,10 +16,16 @@ class DBSchema:
         self.POSITIONS = "positions"
 
 
-class BaseModel:
+class BaseModel(ABC):
     """
     Base Data Model
     """
+    @abstractmethod
+    def verify(self) -> 'BaseModel':
+        """
+        Verify the model's data integrity
+        """
+        raise NotImplementedError("Subclasses must implement verify method")
 
     @property
     def raw(self):
