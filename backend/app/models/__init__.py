@@ -2,19 +2,22 @@
 Core API objects & schemas
 """
 
-from .objects import (
-    Portfolio,
+from .portfolio import Portfolio
+
+from .order import (
     BaseOrder,
     Trade,
     Transfer
 )
 
-from .schemas import DBSchema
+from .db import DBSchema
 
 
 __all__ = [
     'Portfolio',
-    'Order',
+    'BaseOrder',
+    'Trade',
+    'Transfer',
     'DBSchema',
     'types'
 ]

@@ -5,6 +5,7 @@ Orders Service - adding, updating, and deleting order records
 from datetime import datetime
 from supabase import create_client
 
+from app.core import BaseOrder
 from app.configs import config
 
 
@@ -17,13 +18,17 @@ supabase = create_client(
 def create_order(portfolio_id: str, ticker: str, quantity: int, price: float):
     now = datetime.now().isoformat()
 
-    res = supabase.table(config.DB_SCHEMA.ORDERS).insert({
-        "portfolio_id": portfolio_id,
-        "ticker": ticker.upper(),
-        "quantity": quantity,
-        "price": price,
-        "timestamp": now,
-    }).execute()
+    new_order = BaseOrder(
+        portfolio_id=portfolio_id,
+        ticker=ticker.upper(),
+        quantity=quantity,
+        price=price,
+        created_at=now
+    ).verify()
+
+    res = supabase.table(
+        config.DB_SCHEMA.ORDERS
+    ).insert(new_order.raw).execute()
 
     supabase.rpc(
         "increment_quantity",

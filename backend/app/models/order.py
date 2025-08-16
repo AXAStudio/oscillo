@@ -1,9 +1,8 @@
 """
-Core data objects
+Order Models
 """
 
-from abc import ABC, abstractmethod
-
+from .db import BaseModel
 from .types import (
     OrderType,
     TradeType,
@@ -11,35 +10,7 @@ from .types import (
 )
 
 
-class Portfolio:
-    """
-    Portfolio Row Schema
-    """
-    def __init__(
-            self,
-            id: str = None,
-            user_id: str = None,
-            name: str = None,
-            initial_investment: float = None,
-            created_at: str = None,
-            last_updated: str = None
-        ):
-        self.id = id
-        self.user_id = user_id
-        self.name = name
-        self.initial_investment = initial_investment
-        self.created_at = created_at
-        self.last_updated = last_updated
-
-    @property
-    def raw(self):
-        """
-        Dict of attribute name: attribute
-        """
-        return self.__dict__
-
-
-class BaseOrder:
+class BaseOrder(BaseModel):
     """
     Base Class for Orders
     """
@@ -58,13 +29,6 @@ class BaseOrder:
         self.quantity = quantity
         self.price = price
         self.created_at = created_at
-
-    @property
-    def raw(self):
-        """
-        Dict of attribute name: attribute
-        """
-        return {k: v for k, v in self.__dict__.items() if k[0] != '_'}
 
 
 class Trade(BaseOrder):
@@ -88,13 +52,6 @@ class Trade(BaseOrder):
         
         return TradeType.SELL
 
-    @property
-    def raw(self):
-        """
-        Dict of attribute name: attribute
-        """
-        return self.__dict__
-
 
 class Transfer(BaseOrder):
     """
@@ -116,11 +73,3 @@ class Transfer(BaseOrder):
             return TransferType.DEPOSIT
         
         return TransferType.WITHDRAWAL
-
-    @property
-    def raw(self):
-        """
-        Dict of attribute name: attribute
-        """
-        return self.__dict__
-

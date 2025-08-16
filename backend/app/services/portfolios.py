@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime
 from supabase import create_client
 
+from app.core import Portfolio
 from app.configs import config
 
 
@@ -50,14 +51,18 @@ def create_portfolio(user_id: str, name: str, initial_investment: float):
     portfolio_id = str(uuid.uuid4())
     now = datetime.now().isoformat()
 
-    res = supabase.table("portfolios").insert({
-        "id": portfolio_id,
-        "user_id": user_id,
-        "name": name,
-        "initial_investment": initial_investment,
-        "created_at": now,
-        "last_updated": now
-    }).execute()
+    new_portfolio = Portfolio(
+        id=portfolio_id,
+        user_id=user_id,
+        name=name,
+        initial_investment=initial_investment,
+        created_at=now,
+        last_updated=now
+    ).verify()
+
+    res = supabase.table("portfolios").insert(
+        new_portfolio.raw
+    ).execute()
 
     if not res.data:
         raise Exception(f"Failed to create portfolio: {res}")
