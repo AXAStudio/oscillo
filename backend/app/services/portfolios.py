@@ -9,6 +9,7 @@ from supabase import create_client
 
 from app.models import Portfolio
 from app.configs import config
+from pf_aggregation import get_portfolio_time_series
 
 
 supabase = create_client(
@@ -31,17 +32,36 @@ def get_all_portfolios(user_id: str):
     if not portfolios:
         return []
 
-    # Step 2: For each portfolio, fetch tickers and append them
-    for portfolio in portfolios:
-        tickers_res = supabase.table(
-            config.DB_SCHEMA.ORDERS
-        ).select("*").eq(
-            "portfolio_id", portfolio["id"]
-        ).execute()
-
-        portfolio["order_history"] = tickers_res.data
-
     return portfolios
+
+
+def get_portfolio_data(user_id: str, portfolio_id: str, get_value_history, get_ticker_value_history, interval):
+    """
+    Fetch all portfolios for a given user, including their tickers.
+
+    Need to be able to pass in a granularity (do we also want value history? do we want value history by ticker as well?)
+    - get_value_history: bool
+    - get_ticker_value_history: bool
+
+    -> get_portfolio_time_series(portfolio_id, created_at, get_ticker_value_history)
+     -> dict of tickers: value history, including a ticker called CAPITAL and PORTFOLIO_AGG
+    """
+
+    # Step 1: Get all portfolios for the user
+    portfolio_res = supabase.table(
+        config.DB_SCHEMA.PORTFOLIOS
+    ).select("*").eq("user_id", user_id).eq("portfolio_id", portfolio_id).execute()
+
+    portfolio = portfolio_res.data
+
+    if not portfolio:
+        raise ValueError("Portfolio not found")
+
+    if get_value_history:
+        portfolio["value_history"] = get_portfolio_time_series(portfolio_id, portfolio["created_at"], get_ticker_value_history, interval)
+
+    return portfolio
+    
 
 
 def create_portfolio(user_id: str, name: str):

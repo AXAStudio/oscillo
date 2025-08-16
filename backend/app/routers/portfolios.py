@@ -15,7 +15,8 @@ from app.services.portfolios import (
     get_all_portfolios,
     create_portfolio,
     delete_portfolio,
-    get_all_orders
+    get_all_orders,
+    get_portfolio_data
 )
 from app.services.positions import get_all_positions
 
@@ -37,6 +38,18 @@ class PortfolioRequest(BaseModel):
 async def list_portfolios(request: Request):
     user_id = get_current_user_id(request)
     return get_all_portfolios(user_id)
+
+
+@router.get("/{portfolio_id}")
+async def get_portfolio(
+    request: Request, 
+    portfolio_id: str,
+    get_value_history : bool, 
+    get_ticker_value_history : bool,
+    interval = "1d"
+):
+    user_id = get_current_user_id(request)
+    return get_portfolio_data(user_id, portfolio_id, get_value_history, get_ticker_value_history, interval)
 
 
 @router.post("")
