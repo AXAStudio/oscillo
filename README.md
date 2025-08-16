@@ -33,3 +33,4 @@ Lightweight platform for basic portfolio tracking & paper trading.
 * Add RLS for supabase
 * Ensure defaults are properly added for supabase
 * Endpoints for price history at portfolio level & asset level
+* Make a get route for portfolio orders
