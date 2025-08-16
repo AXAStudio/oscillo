@@ -1,5 +1,5 @@
 """
-Market data endpoints.
+Market Data Service
 """
 
 import time

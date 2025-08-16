@@ -1,3 +1,7 @@
+"""
+Positions Management Service
+"""
+
 from supabase import create_client
 
 from app.configs import config

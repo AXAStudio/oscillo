@@ -4,16 +4,7 @@ API Configs
 
 import os
 
-
-class DBSchema:
-    """
-    Database Schema
-    """
-    def __init__(self):
-        self.USERS = "users"
-        self.PORTFOLIOS = "portfolios"
-        self.ORDERS = "orders"
-        self.POSITIONS = "positions"
+from app.core import DBSchema
 
 
 class Config:
