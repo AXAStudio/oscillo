@@ -7,9 +7,9 @@ import uuid
 from datetime import datetime
 from supabase import create_client
 
-from app.models import Portfolio
 from app.configs import config
-from pf_aggregation import get_portfolio_time_series
+from app.models import Portfolio
+from app.services.pf_agg import get_portfolio_history
 
 
 supabase = create_client(
@@ -35,22 +35,23 @@ def get_all_portfolios(user_id: str):
     return portfolios
 
 
-def get_portfolio_data(user_id: str, portfolio_id: str, get_value_history, get_ticker_value_history, interval):
+def get_portfolio_data(
+        user_id: str, 
+        portfolio_id: str, 
+        get_value_history: bool, 
+        get_ticker_value_history: bool,
+        interval: str = '1d'
+    ):
     """
     Fetch all portfolios for a given user, including their tickers.
-
-    Need to be able to pass in a granularity (do we also want value history? do we want value history by ticker as well?)
-    - get_value_history: bool
-    - get_ticker_value_history: bool
-
-    -> get_portfolio_time_series(portfolio_id, created_at, get_ticker_value_history)
-     -> dict of tickers: value history, including a ticker called CAPITAL and PORTFOLIO_AGG
     """
-
-    # Step 1: Get all portfolios for the user
-    portfolio_res = supabase.table(
-        config.DB_SCHEMA.PORTFOLIOS
-    ).select("*").eq("user_id", user_id).eq("portfolio_id", portfolio_id).execute()
+    portfolio_res = (
+        supabase.table(config.DB_SCHEMA.PORTFOLIOS)
+        .select("*")
+        .eq("user_id", user_id)
+        .eq("portfolio_id", portfolio_id)
+        .execute()
+    )
 
     portfolio = portfolio_res.data
 
@@ -58,7 +59,12 @@ def get_portfolio_data(user_id: str, portfolio_id: str, get_value_history, get_t
         raise ValueError("Portfolio not found")
 
     if get_value_history:
-        portfolio["value_history"] = get_portfolio_time_series(portfolio_id, portfolio["created_at"], get_ticker_value_history, interval)
+        portfolio["value_history"] = get_portfolio_history(
+            portfolio_id,
+            portfolio["created_at"],
+            get_ticker_value_history,
+            interval
+        )
 
     return portfolio
     
