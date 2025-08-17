@@ -45,13 +45,10 @@ async def list_portfolios(request: Request):
 @router.get("/{portfolio_id}")
 async def get_portfolio(
     request: Request, 
-    portfolio_id: str,
-    get_value_history : bool, 
-    get_ticker_value_history : bool,
-    interval = "1d"
+    portfolio_id: str
 ):
     user_id = get_current_user_id(request)
-    return get_portfolio_data(user_id, portfolio_id, get_value_history, get_ticker_value_history, interval)
+    return await get_portfolio_data(user_id, portfolio_id)
 
 
 @router.post("")

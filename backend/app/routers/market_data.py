@@ -5,13 +5,13 @@ import app.services.market_data as market_data
 
 
 router = APIRouter(
-    prefix="/market-data",
+    prefix="/market",
     tags=["Market Data"],
     responses={404: {"description": "Not found"}}
 )
 
 
-@router.get("/prices")
+@router.get("/quotes")
 async def get_recent_prices(
     tickers: str, 
     period: str = "1d",
@@ -82,6 +82,27 @@ async def get_price_history(
             ticker: df.to_json(orient='index', date_format='iso')
             for ticker, df in ticker_dfs.items()
         }
+
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="Request timed out while fetching market data.")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.get("/search")
+async def ticker_search(
+    q : str
+):
+    """
+    Search for tickers based on query
+    """
+
+    try:
+        ticker = await market_data.find_ticker(
+            q
+        )
+
+        return ticker
 
     except asyncio.TimeoutError:
         raise HTTPException(status_code=504, detail="Request timed out while fetching market data.")

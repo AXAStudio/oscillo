@@ -8,9 +8,11 @@ from datetime import datetime
 from supabase import create_client
 
 from app.configs import config
-from app.models import Portfolio
+from app.models import Portfolio, Order
 from app.utils.logger import setup_logger
 from app.services.pf_agg import get_portfolio_history
+from app.services.positions import get_portfolio_positions
+from app.services.market_data import fetch_recent_quotes
 
 
 _logger = setup_logger()
@@ -41,10 +43,7 @@ def get_all_portfolios(user_id: str):
 
 async def get_portfolio_data(
         user_id: str, 
-        portfolio_id: str, 
-        get_value_history: bool, 
-        get_ticker_value_history: bool,
-        interval: str = '1d'
+        portfolio_id: str
     ):
     """
     Fetch all portfolios for a given user, including their tickers.
@@ -57,21 +56,38 @@ async def get_portfolio_data(
         .execute()
     )
 
-    portfolio = portfolio_res.data[0]
+    if not portfolio_res.data[0]:
+        raise ValueError('Portfolio not found')
 
-    if not portfolio:
-        raise ValueError("Portfolio not found")
+    out = Portfolio(**portfolio_res.data[0]).raw
+    positions = get_portfolio_positions(portfolio_id=portfolio_id)
 
-    if get_value_history:
-        portfolio["value_history"] = await get_portfolio_history(
-            portfolio_id,
-            portfolio["created_at"],
-            get_ticker_value_history,
-            interval
+    lean_positions = {}
+    lean_positions[Order.CASH_TICKER] = dict(
+        quantity=positions[Order.CASH_TICKER]['quantity'],
+        value=positions[Order.CASH_TICKER]['quantity']
+    )
+
+    positions.pop('CA$H')
+    prices = await fetch_recent_quotes(
+        ','.join(positions.keys())
+    )
+
+    total_value = lean_positions[Order.CASH_TICKER]['value']
+    for ticker, position_data in positions.items():
+        position_value = position_data['quantity'] * prices[ticker]
+        lean_positions[ticker] = dict(
+            quantity=position_data['quantity'],
+            value=position_value
         )
+        total_value += position_value
 
-    return portfolio
-    
+    out.update(
+        dict(present_value=total_value, positions=lean_positions)
+    )
+
+    return out
+
 
 def create_portfolio(user_id: str, name: str):
     """

@@ -6,6 +6,7 @@ from typing import Dict, Any
 from supabase import create_client
 
 from app.configs import config
+from app.models import Positions
 
 
 supabase = create_client(
