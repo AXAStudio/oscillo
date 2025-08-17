@@ -8,7 +8,7 @@ from datetime import datetime
 from supabase import create_client
 
 from app.configs import config
-from app.models import Portfolio, Order
+from app.models import Portfolio, Order, Positions
 from app.utils.logger import setup_logger
 from app.services.pf_agg import get_portfolio_history
 from app.services.positions import get_portfolio_positions
@@ -60,27 +60,24 @@ async def get_portfolio_data(
         raise ValueError('Portfolio not found')
 
     out = Portfolio(**portfolio_res.data[0]).raw
-    positions = get_portfolio_positions(portfolio_id=portfolio_id)
+    positions = Positions(
+        get_portfolio_positions(portfolio_id=portfolio_id)
+    )
 
-    lean_positions = {}
+    lean_positions = dict()
     lean_positions[Order.CASH_TICKER] = dict(
-        quantity=positions[Order.CASH_TICKER]['quantity'],
-        value=positions[Order.CASH_TICKER]['quantity']
+        quantity=positions.cash,
+        value=positions.cash
     )
+    prices = await fetch_recent_quotes(positions.tickers)
 
-    positions.pop('CA$H')
-    prices = await fetch_recent_quotes(
-        ','.join(positions.keys())
-    )
-
-    total_value = lean_positions[Order.CASH_TICKER]['value']
-    for ticker, position_data in positions.items():
-        position_value = position_data['quantity'] * prices[ticker]
+    total_value = positions.cash
+    for ticker in positions.tickers:
         lean_positions[ticker] = dict(
-            quantity=position_data['quantity'],
-            value=position_value
+            quantity=positions.quantity_of(ticker),
+            value=positions.value_of(ticker, prices[ticker])
         )
-        total_value += position_value
+        total_value += positions.value_of(ticker, prices[ticker])
 
     out.update(
         dict(present_value=total_value, positions=lean_positions)
