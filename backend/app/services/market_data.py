@@ -8,7 +8,7 @@ import asyncio
 import pandas as pd
 import yfinance as yf
 
-from typing import Dict, Any
+from typing import Dict, Union, Any
 
 
 # Cache per unique ticker set
@@ -17,7 +17,7 @@ CACHE_TTL = 30  # seconds
 
 
 async def fetch_full_data(
-    tickers: str,
+    tickers: Union[str, list],
     period: str = "1d",
     interval: str = "1m",
     timeout: int = 10
@@ -26,6 +26,9 @@ async def fetch_full_data(
     Fetch full OHLCV data from yfinance with caching.
     Returns a dictionary of {ticker: DataFrame}.
     """
+    if isinstance(tickers, list):
+        tickers = ','.join(tickers)
+
     tickers_key = tickers.strip().upper()
     now = time.time()
 

@@ -4,12 +4,18 @@ Portfolio Aggregation Utils
 
 from __future__ import annotations
 
+import numpy as np
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timezone
 
+from app.models import Order
 from .orders import get_all_orders
 from .market_data import fetch_full_data
 from app.utils.timestamps import parse_timestamptz
+
+
+from datetime import datetime, timezone
+from typing import Dict, Any 
 
 
 def _get_nearest_yf_period(
@@ -79,36 +85,22 @@ def _prices_df(prices_dict: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     for tkr, df in (prices_dict or {}).items():
         if df is None or len(df) == 0:
             continue
-        local = df.copy()
-        # standardize column names
-        time_col = "Datetime" if "Datetime" in local.columns else (
-            "Date" if "Date" in local.columns else None
-        )
-        if time_col is None or "Close" not in local.columns:
-            continue
+        local = df.copy().reset_index()
         # keep full timestamp resolution
-        idx = pd.to_datetime(local[time_col], utc=True, errors="coerce").dt.tz_localize(None)
+        idx = pd.to_datetime(local['Datetime'], utc=True, errors="coerce").dt.tz_localize(None)
         s = pd.Series(local["Close"].astype(float).values, index=idx, name=str(tkr).upper())
         # only collapse if true duplicates exist at the *same exact timestamp*
         s = s.groupby(level=0).last()
         frames.append(s)
+
     if not frames:
         return pd.DataFrame()
+
     px = pd.concat(frames, axis=1).sort_index()
     return px
 
 
-
-
-
-from datetime import datetime, timezone
-from typing import Dict, List, Any, Optional
-
-import numpy as np
-import pandas as pd
-
-
-def get_portfolio_history(
+async def get_portfolio_history(
     portfolio_id: str,
     created_at: str,
     get_ticker_history: bool,
@@ -116,6 +108,7 @@ def get_portfolio_history(
 ) -> dict[str, list]:
     """
     Portfolio time series with both cumulative values and interval-wise deltas.
+    Cash is represented by ticker 'CA$H' (quantity = cash amount).
     """
     # --- main ---------------------------------------------------------------
     start_dt = parse_timestamptz(created_at)
@@ -125,25 +118,35 @@ def get_portfolio_history(
     # 1) Orders
     raw_orders = get_all_orders(portfolio_id)
     orders = _orders_df(raw_orders)
-    tickers = sorted(orders["ticker"].dropna().unique().tolist())
 
-    # 2) Prices
-    prices_raw = {}
-    if tickers:
-        prices_raw = fetch_full_data(
-            tickers=tickers,
+    # All distinct tickers in orders
+    tickers = sorted(orders["ticker"].dropna().unique().tolist())
+    # Exclude cash for pricing/equity valuation
+    tickers_no_cash = [t for t in tickers if t != Order.CASH_TICKER]
+
+    # 2) Prices (exclude CA$H)
+    prices_raw: Dict[str, pd.DataFrame] = {}
+    if tickers_no_cash:
+        prices_raw = await fetch_full_data(
+            tickers=tickers_no_cash,
             period=_get_nearest_yf_period(start_dt, datetime.now(timezone.utc)),
             interval=interval
         )
+
     price_df = _prices_df(prices_raw)
 
     # 3) Timeline
     if price_df.empty:
         order_days = (
             orders["timestamp"]
-            .dt.tz_convert("UTC").dt.tz_localize(None).dt.normalize().tolist()
+            .dt.tz_convert("UTC")
+            .dt.tz_localize(None)
+            .dt.normalize()
+            .tolist()
         )
-        timeline_idx = pd.DatetimeIndex(sorted({start_day, *order_days})) or pd.DatetimeIndex([start_day])
+        timeline_idx = pd.DatetimeIndex(sorted({start_day, *order_days}))
+        if len(timeline_idx) == 0:
+            timeline_idx = pd.DatetimeIndex([start_day])
     else:
         price_df = price_df.loc[price_df.index >= start_day]
         timeline_idx = pd.DatetimeIndex(sorted({start_day, *price_df.index.tolist()}))
@@ -151,21 +154,21 @@ def get_portfolio_history(
     if len(timeline_idx) == 0:
         timeline_idx = pd.DatetimeIndex([start_day])
 
-    # 4) Align orders
+    # 4) Align orders to first valuation time >= order day
     order_day = orders["timestamp"].dt.tz_convert("UTC").dt.tz_localize(None).dt.normalize()
     idxs = timeline_idx.searchsorted(order_day, side="left")
     valid_mask = idxs < len(timeline_idx)
     orders = orders.loc[valid_mask].copy()
     orders["eff_date"] = timeline_idx[idxs[valid_mask]]
 
-    # 5) Split transfers vs trades
-    is_transfer = orders["ticker"].isna()
-    transfers = orders.loc[is_transfer, ["eff_date", "quantity"]].copy()
-    trades = orders.loc[~is_transfer, ["eff_date", "ticker", "quantity", "price"]].copy()
+    # 5) Split CA$H transfers vs trades
+    is_cash = orders["ticker"].eq(Order.CASH_TICKER)
+    transfers = orders.loc[is_cash, ["eff_date", "quantity"]].copy()
+    trades = orders.loc[~is_cash, ["eff_date", "ticker", "quantity", "price"]].copy()
 
-    # 6) Positions & deltas
+    # 6) Positions & per-interval share deltas (exclude cash)
     if trades.empty:
-        deltas = pd.DataFrame(0.0, index=timeline_idx, columns=tickers)
+        deltas = pd.DataFrame(0.0, index=timeline_idx, columns=tickers_no_cash)
         positions = deltas.copy()
     else:
         deltas = trades.pivot_table(
@@ -173,18 +176,25 @@ def get_portfolio_history(
         ).reindex(timeline_idx, fill_value=0.0).sort_index()
         positions = deltas.cumsum()
 
-    # 7) Cash
+    # 7) Cash series
+    # transfers: quantity is the cash flow (+deposit / −withdrawal)
     cf_transfers = transfers.groupby("eff_date")["quantity"].sum() if not transfers.empty else pd.Series(dtype=float)
-    cf_trades = (trades.assign(cf=lambda d: -(d["quantity"] * d["price"]))
-                        .groupby("eff_date")["cf"].sum()) if not trades.empty else pd.Series(dtype=float)
+    # trades cash flow: -(qty * price)
+    cf_trades = (
+        trades.assign(cf=lambda d: -(d["quantity"] * d["price"]))
+              .groupby("eff_date")["cf"].sum()
+        if not trades.empty else pd.Series(dtype=float)
+    )
 
-    cash_flows = (cf_transfers.reindex(timeline_idx, fill_value=0.0)
-                 + cf_trades.reindex(timeline_idx, fill_value=0.0))
+    cash_flows = (
+        cf_transfers.reindex(timeline_idx, fill_value=0.0)
+        + cf_trades.reindex(timeline_idx, fill_value=0.0)
+    )
     cash_series = cash_flows.cumsum()
 
-    # 8) Prices & valuations
+    # 8) Prices & valuations (exclude cash)
     if price_df.empty:
-        price_aligned = pd.DataFrame(0.0, index=timeline_idx, columns=tickers)
+        price_aligned = pd.DataFrame(0.0, index=timeline_idx, columns=tickers_no_cash)
     else:
         price_aligned = price_df.reindex(timeline_idx).ffill().fillna(0.0)
 
@@ -194,7 +204,7 @@ def get_portfolio_history(
     equity_value = valuation_by_ticker.sum(axis=1)
     portfolio_agg = (equity_value + cash_series).astype(float)
 
-    # --- NEW: deltas relative to previous row ---
+    # Deltas (interval-wise)
     capital_delta = cash_series.diff().fillna(cash_series)
     portfolio_delta = portfolio_agg.diff().fillna(portfolio_agg)
     ticker_deltas = valuation_by_ticker.diff().fillna(valuation_by_ticker)
@@ -213,6 +223,3 @@ def get_portfolio_history(
             out[f"{tkr}_DELTA"] = ticker_deltas[tkr].round(4).tolist()
 
     return out
-
-
-

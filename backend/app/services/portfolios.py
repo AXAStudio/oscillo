@@ -9,7 +9,11 @@ from supabase import create_client
 
 from app.configs import config
 from app.models import Portfolio
+from app.utils.logger import setup_logger
 from app.services.pf_agg import get_portfolio_history
+
+
+_logger = setup_logger()
 
 
 supabase = create_client(
@@ -35,7 +39,7 @@ def get_all_portfolios(user_id: str):
     return portfolios
 
 
-def get_portfolio_data(
+async def get_portfolio_data(
         user_id: str, 
         portfolio_id: str, 
         get_value_history: bool, 
@@ -49,17 +53,17 @@ def get_portfolio_data(
         supabase.table(config.DB_SCHEMA.PORTFOLIOS)
         .select("*")
         .eq("user_id", user_id)
-        .eq("portfolio_id", portfolio_id)
+        .eq("id", portfolio_id)
         .execute()
     )
 
-    portfolio = portfolio_res.data
+    portfolio = portfolio_res.data[0]
 
     if not portfolio:
         raise ValueError("Portfolio not found")
 
     if get_value_history:
-        portfolio["value_history"] = get_portfolio_history(
+        portfolio["value_history"] = await get_portfolio_history(
             portfolio_id,
             portfolio["created_at"],
             get_ticker_value_history,
