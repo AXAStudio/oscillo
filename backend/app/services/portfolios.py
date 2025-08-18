@@ -8,11 +8,10 @@ from datetime import datetime
 from supabase import create_client
 
 from app.configs import config
-from app.models import Portfolio, Order, Positions
 from app.utils.logger import setup_logger
-from app.services.pf_agg import get_portfolio_history
-from app.services.positions import get_portfolio_positions
+from app.models import Portfolio, Order, Positions
 from app.services.market import fetch_recent_quotes
+from app.services.positions import get_portfolio_positions
 
 
 _logger = setup_logger()
