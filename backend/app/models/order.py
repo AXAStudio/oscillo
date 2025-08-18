@@ -5,7 +5,7 @@ Order Models
 from .base import BaseModel
 from .types import OrderType
 from app.utils.logger import setup_logger
-from app.utils.market_data import verify_ticker
+from app.utils.market import verify_ticker
 
 
 _logger = setup_logger()

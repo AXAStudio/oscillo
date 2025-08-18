@@ -2,7 +2,7 @@ import logging
 
 from fastapi import FastAPI
 
-from app.routers import market_data
+from app.routers import market
 from app.routers import portfolios
 
 
@@ -21,7 +21,7 @@ def build_app():
     )
 
     # Include routes
-    api.include_router(market_data.router)
+    api.include_router(market.router)
     api.include_router(portfolios.router)
 
     app.mount(f"/api/{SEM_VER}/", api)

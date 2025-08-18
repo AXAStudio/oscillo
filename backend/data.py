@@ -1,4 +1,4 @@
-orders = [
+ORDERS = [
     {
         'timestamp': '2025-08-11T13:35:12.666823+00:00',
         'ticker': 'CA$H',
@@ -96,7 +96,7 @@ orders = [
         'order_id': '718293a4-b5c6-41de-2e23-456789abcdef'
     },
     {
-        'timestamp': '2025-08-18T14:10:00+00:00',
+        'timestamp': '2025-08-18T14:10:00.00+00:00',
         'ticker': 'AAPL',
         'quantity': -1,
         'price': 675.20,
@@ -104,7 +104,7 @@ orders = [
         'order_id': 'a1e2f3b4-5678-49aa-9cde-001122334455'
     },
     {
-        'timestamp': '2025-08-18T19:50:33+00:00',
+        'timestamp': '2025-08-18T19:50:33.00+00:00',
         'ticker': 'TSLA',
         'quantity': -4,
         'price': 202.15,
@@ -112,7 +112,7 @@ orders = [
         'order_id': 'b2f3a4c5-6789-40bb-adde-112233445566'
     },
     {
-        'timestamp': '2025-08-19T15:05:45+00:00',
+        'timestamp': '2025-08-19T15:05:45.00+00:00',
         'ticker': 'NVDA',
         'quantity': -1,
         'price': 121.30,
@@ -120,7 +120,7 @@ orders = [
         'order_id': 'c3a4b5d6-7890-41cc-bbee-223344556677'
     },
     {
-        'timestamp': '2025-08-19T19:40:10+00:00',
+        'timestamp': '2025-08-19T19:40:10.00+00:00',
         'ticker': 'VOO',
         'quantity': -1,
         'price': 514.90,
@@ -128,7 +128,7 @@ orders = [
         'order_id': 'd4b5c6e7-8901-42dd-ccff-334455667788'
     },
     {
-        'timestamp': '2025-08-20T13:45:12+00:00',
+        'timestamp': '2025-08-20T13:45:12.00+00:00',
         'ticker': 'MSFT',
         'quantity': -2,
         'price': 431.25,
@@ -136,7 +136,7 @@ orders = [
         'order_id': 'e5c6d7f8-9012-43ee-dd00-445566778899'
     },
     {
-        'timestamp': '2025-08-20T18:59:59+00:00',
+        'timestamp': '2025-08-20T18:59:59.00+00:00',
         'ticker': 'GOOGL',
         'quantity': -1,
         'price': 164.00,
@@ -144,7 +144,7 @@ orders = [
         'order_id': 'f6d7e809-0123-44ff-ee11-5566778899aa'
     },
     {
-        'timestamp': '2025-08-21T14:30:06+00:00',
+        'timestamp': '2025-08-21T14:30:06.00+00:00',
         'ticker': 'KO',
         'quantity': -5,
         'price': 64.10,
@@ -152,7 +152,7 @@ orders = [
         'order_id': '07e8f91a-1234-4500-ff22-66778899aabb'
     },
     {
-        'timestamp': '2025-08-21T19:15:22+00:00',
+        'timestamp': '2025-08-21T19:15:22.00+00:00',
         'ticker': 'AMZN',
         'quantity': -1,
         'price': 189.70,
@@ -160,7 +160,7 @@ orders = [
         'order_id': '18f9a02b-2345-4611-0011-778899aabbcc'
     },
     {
-        'timestamp': '2025-08-22T13:35:31+00:00',
+        'timestamp': '2025-08-22T13:35:31.00+00:00',
         'ticker': 'TSLA',
         'quantity': -3,
         'price': 203.05,
@@ -168,7 +168,7 @@ orders = [
         'order_id': '290ab13c-3456-4722-1122-8899aabbccdd'
     },
     {
-        'timestamp': '2025-08-22T19:58:48+00:00',
+        'timestamp': '2025-08-22T19:58:48.00+00:00',
         'ticker': 'META',
         'quantity': -1,
         'price': 471.50,

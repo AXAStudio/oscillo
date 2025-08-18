@@ -1,7 +1,7 @@
 import asyncio
 from fastapi import APIRouter, HTTPException
 
-import app.services.market_data as market_data
+import app.services.market as market
 
 
 router = APIRouter(
@@ -36,7 +36,7 @@ async def get_recent_prices(
 
     try:
         results = await asyncio.gather(*[
-            market_data.fetch_last_single(
+            market.fetch_last_single(
                 t, period, interval, timeout
             ) for t in ticker_list
         ])
@@ -71,7 +71,7 @@ async def get_price_history(
         raise HTTPException(status_code=400, detail="Timeout must be between 1 and 240 seconds.")
 
     try:
-        ticker_dfs = await market_data.fetch_full_data(
+        ticker_dfs = await market.fetch_full_data(
             tickers,
             period=period,
             interval=interval,
@@ -98,7 +98,7 @@ async def ticker_search(
     """
 
     try:
-        ticker = await market_data.find_ticker(
+        ticker = await market.find_ticker(
             q
         )
 
