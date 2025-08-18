@@ -2,8 +2,10 @@ import logging
 
 from fastapi import FastAPI
 
+from app.routers import orders
 from app.routers import market
 from app.routers import portfolios
+from app.routers import performance
 
 
 TITLE = "Oscillo Backend API"
@@ -23,6 +25,8 @@ def build_app():
     # Include routes
     api.include_router(market.router)
     api.include_router(portfolios.router)
+    api.include_router(orders.router)
+    api.include_router(performance.router)
 
     app.mount(f"/api/{SEM_VER}/", api)
 

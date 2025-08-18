@@ -73,7 +73,7 @@ async def get_portfolio_data(
     now_ts = pd.Timestamp.now(tz=tzinfo)
 
     # --------------------- ORDERS ---------------------
-    from data import ORDERS as raw_orders
+    from test_data import ORDERS as raw_orders
     # raw_orders = get_all_orders(portfolio_id)
     orders = clean_orders_df(raw_orders).copy()
 

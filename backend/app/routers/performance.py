@@ -19,7 +19,7 @@ _logger = setup_logger()
 
 
 @router.get("/{portfolio_id}")
-async def get_portfolio(
+async def get_portfolio_performance(
     request: Request, 
     portfolio_id: str,
     interval : str = '1d',
