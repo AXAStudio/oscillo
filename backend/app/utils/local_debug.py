@@ -3,7 +3,7 @@ Local Debugging Util for Debugging at Scale
 """
 
 
-class Spoof:
+class _SpoofLogger:
     def debug(msg: str):
         """
         Spoof debug function to avoid errors in production.
@@ -11,7 +11,7 @@ class Spoof:
         pass
 
 
-class LocalLogger:
+class _LocalLogger:
     def __init__(self, output_file: str = 'test.txt'):
         """
         Initialize the LocalLogger.
@@ -28,3 +28,15 @@ class LocalLogger:
         with open(self._out_file, 'w' if overwrite else 'a') as f:
             f.write(str(msg))
             f.write('\n')
+
+
+def setup_logger(debug: bool, output_file: str):
+    """
+    Setup logger for debugging purposes.
+    If debug is True, it initializes a LocalLogger.
+    Otherwise, it uses Spoof to avoid errors in production.
+    """
+    if debug:
+        return _LocalLogger(output_file)
+    else:
+        return _SpoofLogger()

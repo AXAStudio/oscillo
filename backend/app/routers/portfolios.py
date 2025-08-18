@@ -38,8 +38,13 @@ class PortfolioRequest(BaseModel):
 
 @router.get("")
 async def list_portfolios(request: Request):
-    user_id = get_current_user_id(request)
-    return get_all_portfolios(user_id)
+    try:
+        user_id = get_current_user_id(request)
+        return get_all_portfolios(user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/{portfolio_id}")
@@ -47,8 +52,13 @@ async def get_portfolio(
     request: Request, 
     portfolio_id: str
 ):
-    user_id = get_current_user_id(request)
-    return await get_portfolio_data(user_id, portfolio_id)
+    try:
+        user_id = get_current_user_id(request)
+        return await get_portfolio_data(user_id, portfolio_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("")
@@ -57,23 +67,33 @@ async def add_portfolio(request: Request, new_portfolio: PortfolioRequest = Body
     Create a new portfolio for the authenticated user.
     Request body should include: name, initial_investment, capital.
     """
-    user_id = get_current_user_id(request)
+    try:
+        user_id = get_current_user_id(request)
 
-    name = new_portfolio.name
+        name = new_portfolio.name
 
-    if not name:
-        raise HTTPException(
-            status_code=400,
-            detail="Missing required fields: name, initial_investment"
-        )
+        if not name:
+            raise HTTPException(
+                status_code=400,
+                detail="Missing required fields: name, initial_investment"
+            )
 
-    return create_portfolio(user_id, name)
+        return create_portfolio(user_id, name)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.delete("/{portfolio_id}")
 async def remove_portfolio(portfolio_id: str, request: Request):
-    user_id = get_current_user_id(request)
-    return delete_portfolio(user_id, portfolio_id)
+    try:
+        user_id = get_current_user_id(request)
+        return delete_portfolio(user_id, portfolio_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/{portfolio_id}/orders")

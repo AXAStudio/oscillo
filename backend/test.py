@@ -1,6 +1,6 @@
 from app.models import Portfolio
 from app.services.market import fetch_full_data
-from app.utils.performance import get_portfolio_history
+from app.services.performance import get_portfolio_data
 
 
 TEST_PORTFOLIO = Portfolio(
@@ -11,17 +11,17 @@ TEST_PORTFOLIO = Portfolio(
 
 
 async def test():
-    test_agg = await get_portfolio_history(
+    test_agg = await get_portfolio_data(
         TEST_PORTFOLIO.id,
         TEST_PORTFOLIO.created_at,
-        get_ticker_history=True,
-        interval='1d',
-        local_debug=True
+        interval='1d'
     )
 
     with open('test.txt', 'a') as f:
         f.write('\n\n\n\nOUTPUT:')
         f.write(str(test_agg))
+
+    test_agg = test_agg['performance']
 
     import matplotlib.pyplot as plt
     plt.plot(test_agg['TIMESTAMP'], test_agg['pv:TOTAL'])

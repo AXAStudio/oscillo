@@ -22,15 +22,19 @@ _logger = setup_logger()
 async def get_portfolio(
     request: Request, 
     portfolio_id: str,
-    get_ticker_value_history : bool, # default this
-    interval : str,  # default this
-    period: str # default this
+    interval : str = '1d',
+    period: str = 'ALL'
 ):
-    user_id = get_current_user_id(request)
-    return get_portfolio_data(
-        user_id=user_id,
-        portfolio_id=portfolio_id,
-        get_ticker_history=get_ticker_value_history,
-        interval=interval,
-        retreival_period=period
-    )
+    try:
+        user_id = get_current_user_id(request)
+
+        return get_portfolio_data(
+            user_id=user_id,
+            portfolio_id=portfolio_id,
+            interval=interval,
+            retreival_period=period
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException as e:
+        raise HTTPException(status_code=500, detail=str(e))
