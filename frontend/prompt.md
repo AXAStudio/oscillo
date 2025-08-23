@@ -25,15 +25,135 @@
 > Build a responsive Next.js 14 (App Router) TypeScript UI for a lightweight portfolio tracker called **Oscillo**. Use Tailwind CSS and Headless UI or Radix primitives where helpful, plus SWR for data fetching (or React Query if you prefer). Assume a FastAPI backend with these REST endpoints (bearer auth via Supabase):
 >
 > * `GET /portfolios` → list user portfolios
+Example Response:
+[
+    {
+        "id": "6821b1c8-6f21-42cc-bad3-0a1bf6a1cf86",
+        "created_at": "2025-08-16T21:12:09.957539+00:00",
+        "name": "Create Test Portfolio",
+        "last_updated": "2025-08-16T17:12:09.862456+00:00",
+        "user_id": "d62c7b0a-4af1-4520-9f35-ec7825d8c227"
+    }
+]
 > * `POST /portfolios` → create portfolio `{ name, initial_investment }`
+Response Body:
+{
+    "id": "6821b1c8-6f21-42cc-bad3-0a1bf6a1cf86",
+    "created_at": "2025-08-16T21:12:09.957539+00:00",
+    "name": "Create Test Portfolio",
+    "last_updated": "2025-08-16T17:12:09.862456+00:00",
+    "user_id": "d62c7b0a-4af1-4520-9f35-ec7825d8c227"
+}
 > * `GET /portfolios/{id}` → metadata + latest value
+Status: 200
+{
+    "id": "6821b1c8-6f21-42cc-bad3-0a1bf6a1cf86",
+    "user_id": "d62c7b0a-4af1-4520-9f35-ec7825d8c227",
+    "name": "Create Test Portfolio",
+    "created_at": "2025-08-16T21:12:09.957539+00:00",
+    "last_updated": "2025-08-16T17:12:09.862456+00:00",
+    "present_value": 10511.620086669922,
+    "positions": {
+        "CA$H": {
+            "quantity": 6656,
+            "value": 6656
+        },
+        "AAPL": {
+            "quantity": 2,
+            "value": 455.5199890136719
+        },
+        "TSLA": {
+            "quantity": 10,
+            "value": 3400.10009765625
+        }
+    }
+}
 > * `DELETE /portfolios/{id}`
+Status: 200
+{
+    "message": "Portfolio 41d97793-1594-4dce-a010-f4fc8b5d085a deleted successfully"
+}
 > * `GET /portfolios/{id}/positions` → current positions (ticker, qty, avg\_cost, market\_value, pnl, sector)
+Status: 200
+{
+    "status": "success",
+    "positions": {
+        "CA$H": {
+            "ticker": "CA$H",
+            "portfolio_id": "6821b1c8-6f21-42cc-bad3-0a1bf6a1cf86",
+            "quantity": 6656,
+            "created_at": "2025-08-16T21:38:12.892212+00:00",
+            "updated_at": "2025-08-16T21:58:55.101134+00:00"
+        },
+        "AAPL": {
+            "ticker": "AAPL",
+            "portfolio_id": "6821b1c8-6f21-42cc-bad3-0a1bf6a1cf86",
+            "quantity": 2,
+            "created_at": "2025-08-16T21:56:36.240083+00:00",
+            "updated_at": "2025-08-16T21:56:36.240083+00:00"
+        },
+        "TSLA": {
+            "ticker": "TSLA",
+            "portfolio_id": "6821b1c8-6f21-42cc-bad3-0a1bf6a1cf86",
+            "quantity": 10,
+            "created_at": "2025-08-16T21:58:54.869481+00:00",
+            "updated_at": "2025-08-16T21:58:54.869481+00:00"
+        }
+    }
+}
 > * `GET /portfolios/{id}/orders` → orders with timestamp, ticker, qty (negative = sell), price
+Status: 200
+{
+    "status": "success",
+    "orders": [
+        {
+            "timestamp": "2025-08-15T18:50:05.515854+00:00",
+            "ticker": "AMZN",
+            "quantity": 10,
+            "price": 175.5,
+            "portfolio_id": "591dd7f5-fff1-4041-ae74-3507688da719",
+            "order_id": "d3e81485-1ec9-412e-8fab-87cb9a5876db"
+        }
+        ...
+    ]
+}
 > * `POST /portfolios/{id}/orders` → create order
-> * `GET /market/quotes?tickers=AAPL,MSFT` → last price, day change, sparkline data
-> * `GET /market/search?q=tesla` → ticker search
+order_payload = {
+  "ticker": 'AMZN',
+  "quantity": 100,
+  "price": 200.25
+}
+Status: 200
+{
+    "status": "success",
+    "order": {
+        "timestamp": "2025-08-16T17:58:54.442574+00:00",
+        "ticker": "TSLA",
+        "quantity": 10,
+        "price": 200.25,
+        "portfolio_id": "6821b1c8-6f21-42cc-bad3-0a1bf6a1cf86",
+        "order_id": "3c9db0c7-6de8-48d2-845e-247d7f3fb091"
+    }
+}
+> * `GET /market/quotes?tickers=AAPL,AMZN` → last price, day change, sparkline data
+{'TSLA': {'Datetime': '2025-08-22T15:59:00-04:00',
+  'Open': 339.9100036621094,
+  'High': 340.25,
+  'Low': 339.8800048828125,
+  'Close': 340.010009765625,
+  'Volume': 1223654,
+  'Dividends': 0.0,
+  'Stock Splits': 0.0},
+ 'AMZN': {'Datetime': '2025-08-22T15:59:00-04:00',
+  'Open': 228.8699951171875,
+  'High': 229.02000427246094,
+  'Low': 228.7899932861328,
+  'Close': 228.83999633789062,
+  'Volume': 810926,
+  'Dividends': 0.0,
+  'Stock Splits': 0.0}}
 > * `GET /performance/{portfolio_id}?period=1D|1W|1M|YTD|1Y|ALL` → series of {timestamp, value}
+{'id': '2025-08-10T00:00:00Z', 'user_id': '6821b1c8-6f21-42cc-bad3-0a1bf6a1cf86', 'name': 'Test Portfolio', 'created_at': '2025-08-10T00:00:00Z', 'last_updated': '2025-08-10T00:00:00Z', 'performance': {'TIMESTAMP': ['2025-08-11T00:00:00', '2025-08-12T00:00:00', '2025-08-13T00:00:00', '2025-08-14T00:00:00', '2025-08-15T00:00:00'], 'pv:CA$H': [0.0, 9429.85, 6521.07, 2368.07, 709.32], 'dv:CA$H': [0.0, 0.0, -0.308465, -0.636859, -0.700465], 'pv:AAPL': [0.0, 0.0, 466.660004, 465.559998, 463.179993], 'dv:AAPL': [0.0, 0.0, 0.0, -0.002357, -0.005112], 'pv:AMZN': [0.0, 664.410004, 673.679993, 692.939987, 693.089996], 'dv:AMZN': [0.0, 0.0, 0.013952, 0.028589, 0.000216], 'pv:GOOGL': [0.0, 0.0, 807.840027, 811.76001, 815.599976], 'dv:GOOGL': [0.0, 0.0, 0.0, 0.004852, 0.00473], 'pv:JPM': [0.0, 0.0, 0.0, 0.0, 0.0], 'dv:JPM': [0.0, 0.0, 0.0, 0.0, 0.0], 'pv:KO': [0.0, 0.0, 0.0, 0.0, 0.0], 'dv:KO': [0.0, 0.0, 0.0, 0.0, 0.0], 'pv:META': [0.0, 0.0, 0.0, 0.0, 0.0], 'dv:META': [0.0, 0.0, 0.0, 0.0, 0.0], 'pv:MSFT': [0.0, 0.0, 0.0, 2612.399902, 2600.849915], 'dv:MSFT': [0.0, 0.0, 0.0, 0.0, -0.004421], 'pv:NVDA': [0.0, 0.0, 0.0, 0.0, 180.449997], 'dv:NVDA': [0.0, 0.0, 0.0, 0.0, 0.0], 'pv:TSLA': [0.0, 0.0, 0.0, 3355.799866, 3305.599976], 'dv:TSLA': [0.0, 0.0, 0.0, 0.0, -0.014959], 'pv:VOO': [0.0, 0.0, 0.0, 0.0, 1774.710022], 'dv:VOO': [0.0, 0.0, 0.0, 0.0, 0.0], 'pv:XOM': [0.0, 0.0, 852.86377, 851.119995, 851.919983], 'dv:XOM': [0.0, 0.0, 0.0, -0.002045, 0.00094], 'pv:TOTAL': [0.0, 10094.260004, 9322.113793, 11157.649758, 11394.719857], 'dv:TOTAL': [0.0, 0.0, -0.076494, 0.196901, 0.021247]}}
 >
 > **Pages & routes (App Router)**
 >
