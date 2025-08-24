@@ -138,21 +138,7 @@ const Settings = () => {
               <p className="text-sm text-muted-foreground">Manage your data and privacy settings</p>
             </div>
           </div>
-
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-medium text-foreground mb-2">Export Data</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Download all your portfolio data in CSV format
-              </p>
-              <Button variant="outline" onClick={handleExportData}>
-                <Download className="mr-2 h-4 w-4" />
-                Export All Data
-              </Button>
-            </div>
-            
-            <Separator />
-            
+          <div>
             <div>
               <h3 className="font-medium text-foreground mb-2">Delete Account</h3>
               <p className="text-sm text-muted-foreground mb-4">

@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -37,8 +39,8 @@ export const OrdersTable = ({ orders, onExport }: OrdersTableProps) => {
   const sortedOrders = [...orders].sort((a, b) => {
     let aVal: any;
     let bVal: any;
-    
-    switch(sortKey) {
+
+    switch (sortKey) {
       case 'timestamp':
         aVal = new Date(a.timestamp).getTime();
         bVal = new Date(b.timestamp).getTime();
@@ -58,13 +60,68 @@ export const OrdersTable = ({ orders, onExport }: OrdersTableProps) => {
       default:
         return 0;
     }
-    
+
     const multiplier = sortOrder === 'asc' ? 1 : -1;
     if (typeof aVal === 'number' && typeof bVal === 'number') {
       return (aVal - bVal) * multiplier;
     }
     return String(aVal).localeCompare(String(bVal)) * multiplier;
   });
+
+  // --- CSV Export (always runs; onExport is optional side-effect)
+  const handleExportCsv = () => {
+    // Columns exported (keep in sync with UI; include company_name & computed fields)
+    const headers = [
+      'Timestamp',
+      'Ticker',
+      'Company',
+      'Side',
+      'Quantity',
+      'Price',
+      'Cost',
+      'Notes',
+    ];
+
+    const csvEscape = (val: unknown) => {
+      const s = val == null ? '' : String(val);
+      const needsQuotes = /[",\n]/.test(s);
+      const escaped = s.replace(/"/g, '""');
+      return needsQuotes ? `"${escaped}"` : escaped;
+    };
+
+    const rows = sortedOrders.map((o) => {
+      const side = o.quantity > 0 ? 'Buy' : 'Sell';
+      const qty = Math.abs(o.quantity);
+      const cost = qty * o.price;
+
+      return [
+        o.timestamp,            // raw ISO timestamp for clean data handling
+        o.ticker,
+        o.company_name ?? '',
+        side,
+        qty,                    // numeric
+        o.price,                // numeric
+        cost,                   // numeric
+        '',                     // notes placeholder
+      ].map(csvEscape).join(',');
+    });
+
+    // BOM for Excel compatibility
+    const csv = ['\uFEFF' + headers.join(','), ...rows].join('\n');
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
 
   return (
     <div className="space-y-4">
@@ -73,7 +130,10 @@ export const OrdersTable = ({ orders, onExport }: OrdersTableProps) => {
         <Button
           variant="outline"
           size="sm"
-          onClick={onExport}
+          onClick={() => {
+            handleExportCsv(); // always download
+            onExport?.();      // optional toast/analytics
+          }}
           className="gap-2"
         >
           <Download className="h-4 w-4" />
@@ -171,7 +231,7 @@ export const OrdersTable = ({ orders, onExport }: OrdersTableProps) => {
                 const side = order.quantity > 0 ? 'Buy' : 'Sell';
                 const qty = Math.abs(order.quantity);
                 const cost = qty * order.price;
-                
+
                 return (
                   <TableRow key={order.order_id} className="hover:bg-card-hover">
                     <TableCell className="font-medium">
@@ -184,12 +244,14 @@ export const OrdersTable = ({ orders, onExport }: OrdersTableProps) => {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className={cn(
-                        'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
-                        side === 'Buy'
-                          ? 'bg-success/10 text-success' 
-                          : 'bg-destructive/10 text-destructive'
-                      )}>
+                      <span
+                        className={cn(
+                          'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
+                          side === 'Buy'
+                            ? 'bg-success/10 text-success'
+                            : 'bg-destructive/10 text-destructive'
+                        )}
+                      >
                         {side}
                       </span>
                     </TableCell>

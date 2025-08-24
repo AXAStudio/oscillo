@@ -1,3 +1,5 @@
+"use client";
+
 import { useState } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -25,7 +27,6 @@ export const HoldingsTable = ({ positions, onExport }: HoldingsTableProps) => {
   const [sortKey, setSortKey] = useState<SortKey>('market_value');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
-  
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -51,7 +52,6 @@ export const HoldingsTable = ({ positions, onExport }: HoldingsTableProps) => {
   const columns = [
     { key: 'ticker', label: 'Ticker', sortable: true },
     { key: 'name', label: 'Name', sortable: true, hideable: true },
-    // NEW: Sector column (sortable + hideable)
     { key: 'sector', label: 'Sector', sortable: true, hideable: true },
     { key: 'quantity', label: 'Qty', sortable: true },
     { key: 'avg_cost', label: 'Avg Cost', sortable: true, hideable: true },
@@ -63,6 +63,45 @@ export const HoldingsTable = ({ positions, onExport }: HoldingsTableProps) => {
     { key: 'weight', label: 'Weight', sortable: true, hideable: true },
   ] as const;
 
+  // --- CSV Export
+  const handleExportCsv = () => {
+    const visibleColumns = columns.filter(
+      (c) => !(c.hideable && hiddenColumns.has(c.key))
+    );
+
+    const csvEscape = (val: unknown) => {
+      const s = val == null ? '' : String(val);
+      const needsQuotes = /[",\n]/.test(s);
+      const escaped = s.replace(/"/g, '""');
+      return needsQuotes ? `"${escaped}"` : escaped;
+    };
+
+    const getCell = (p: Position, key: string) => {
+      const v = (p as any)[key];
+      return typeof v === 'number' ? v : v ?? '';
+    };
+
+    const header = visibleColumns.map((c) => c.label).join(',');
+    const rows = sortedPositions.map((p) =>
+      visibleColumns.map((c) => csvEscape(getCell(p, c.key))).join(',')
+    );
+
+    const csv = ['\uFEFF' + header, ...rows].join('\n'); // BOM for Excel
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `holdings_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -71,7 +110,10 @@ export const HoldingsTable = ({ positions, onExport }: HoldingsTableProps) => {
           <Button
             variant="outline"
             size="sm"
-            onClick={onExport}
+            onClick={() => {
+              handleExportCsv();   // always download CSV
+              onExport?.();        // optional toast/log after
+            }}
             className="gap-2"
           >
             <Download className="h-4 w-4" />
@@ -97,8 +139,8 @@ export const HoldingsTable = ({ positions, onExport }: HoldingsTableProps) => {
                   >
                     <div className="flex items-center gap-1">
                       {column.label}
-                      {column.sortable && (
-                        sortKey === column.key ? (
+                      {column.sortable &&
+                        (sortKey === column.key ? (
                           sortOrder === 'asc' ? (
                             <ArrowUp className="h-3 w-3 text-primary" />
                           ) : (
@@ -106,8 +148,7 @@ export const HoldingsTable = ({ positions, onExport }: HoldingsTableProps) => {
                           )
                         ) : (
                           <ArrowUpDown className="h-3 w-3 text-muted-foreground opacity-50" />
-                        )
-                      )}
+                        ))}
                     </div>
                   </TableHead>
                 );
@@ -126,7 +167,6 @@ export const HoldingsTable = ({ positions, onExport }: HoldingsTableProps) => {
                   </TableCell>
                 )}
 
-                {/* NEW: Sector cell */}
                 {!hiddenColumns.has('sector') && (
                   <TableCell className="text-muted-foreground">
                     {position.sector ?? '—'}
