@@ -1,12 +1,17 @@
 // Formatting utilities
+const toFinite = (v: unknown): number => {
+  const n = typeof v === 'bigint' ? Number(v) : Number(v);
+  return Number.isFinite(n) ? n : 0;
+};
 
-export const formatCurrency = (value: number): string => {
-  return new Intl.NumberFormat('en-US', {
+export const formatCurrency = (v: unknown, currency = 'USD', dp = 2): string => {
+  const n = toFinite(v);
+  return new Intl.NumberFormat(undefined, {
     style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
+    currency,
+    minimumFractionDigits: dp,
+    maximumFractionDigits: dp,
+  }).format(n);
 };
 
 export const formatNumber = (value: number, decimals = 2): string => {
@@ -16,15 +21,12 @@ export const formatNumber = (value: number, decimals = 2): string => {
   }).format(value);
 };
 
-export const formatPercent = (value: number, decimals = 2): string => {
-  const formatted = value.toFixed(decimals);
-  const prefix = value > 0 ? '+' : '';
-  return `${prefix}${formatted}%`;
+export const formatPercent = (v: unknown, dp = 2): string => {
+  return `${toFinite(v).toFixed(dp)}%`;
 };
 
-export const formatAllocation = (value: number, decimals = 2): string => {
-  const formatted = value.toFixed(decimals);
-  return `${formatted}%`;
+export const formatAllocation = (v: unknown, dp = 1): string => {
+  return `${toFinite(v).toFixed(dp)}%`;
 };
 
 export const formatCompactNumber = (value: number): string => {
