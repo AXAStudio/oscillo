@@ -28,7 +28,7 @@ async def get_portfolio_performance(
     try:
         user_id = get_current_user_id(request)
 
-        return get_portfolio_data(
+        return await get_portfolio_data(
             user_id=user_id,
             portfolio_id=portfolio_id,
             interval=interval,
