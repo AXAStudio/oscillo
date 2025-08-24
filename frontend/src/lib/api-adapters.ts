@@ -173,17 +173,39 @@ export function transformPositions(response: PositionsResponse): UiPosition[] {
 }
 
 // ---------------------- Orders ----------------------
+// helper
+const normalizeUtcTimestamp = (t: any): string | null => {
+  if (t == null) return null;
+  if (typeof t === 'number') {
+    // handle seconds vs ms
+    const ms = t < 1e12 ? t * 1000 : t;
+    return new Date(ms).toISOString();
+  }
+  if (typeof t === 'string') {
+    // if already has timezone (Z or ±HH:MM), keep as-is
+    if (/[zZ]|[+-]\d{2}:\d{2}$/.test(t)) return t;
+    // assume UTC and mark it so Date() converts to local correctly
+    return t + 'Z';
+  }
+  return String(t);
+};
+
 export function transformOrders(response: OrdersResponse): any[] {
   const list = (response as any)?.orders ?? [];
   return list.map((order: any) => {
-    const signed = toNum(order?.quantity, 0);
+    const signed = Number(order?.quantity ?? 0);     // keep sign
     const side = signed < 0 ? 'SELL' : 'BUY';
+    const ts = normalizeUtcTimestamp(
+      order?.timestamp ?? order?.created_at ?? order?.time
+    );
+
     return {
       ...order,
-      side,                 // normalized side
-      type: side,           // keep legacy 'type' field too
-      quantity: signed,     // IMPORTANT: keep the SIGN (negative = sell)
-      abs_quantity: Math.abs(signed), // optional convenience for UIs
+      side,
+      type: side,                 // legacy
+      quantity: signed,           // keep sign (table derives side/qty correctly)
+      abs_quantity: Math.abs(signed),
+      timestamp: ts,              // ✅ normalized -> browser will show correct local time
     };
   });
 }

@@ -2,8 +2,8 @@
 Orders Service - searching, adding, updating, and deleting order records
 """
 
-from datetime import datetime
 from supabase import create_client
+from datetime import datetime, timezone
 
 from app.models import Order
 from app.configs import config
@@ -27,8 +27,6 @@ async def create_order(portfolio_id: str, ticker: str, quantity: int, price: flo
     """
     Create order record
     """
-    now = datetime.now().isoformat()
-
     _logger.info("Verifying order...")
     if ticker.upper() != Order.CASH_TICKER:
         metadata = await get_ticker_metadata(ticker)
@@ -42,8 +40,7 @@ async def create_order(portfolio_id: str, ticker: str, quantity: int, price: flo
         name=metadata.get("name") or "Unknown",
         sector=metadata.get("sector") or "Unknown",
         quantity=quantity,
-        price=price,
-        timestamp=now
+        price=price
     ).verify(
         positions=get_portfolio_positions(portfolio_id)
     )

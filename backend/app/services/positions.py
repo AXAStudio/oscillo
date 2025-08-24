@@ -28,6 +28,4 @@ def get_portfolio_positions(portfolio_id: str) -> Dict[str, Any]:
 
     items = res.data or []
 
-    _logger.info({row["ticker"]: row for row in items if row.get("ticker")})
-
     return {row["ticker"]: row for row in items if row.get("ticker")}

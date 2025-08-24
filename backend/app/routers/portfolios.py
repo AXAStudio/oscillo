@@ -40,7 +40,6 @@ async def list_portfolios(request: Request):
     try:
         user_id = get_current_user_id(request)
         res = get_all_portfolios(user_id)
-        _logger.info("portfolio data: %s", str(res))
         return res
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
