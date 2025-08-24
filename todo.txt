@@ -1,0 +1,14 @@
+Bugs
+- Export data to csv does not work
+- Cash orders are timezone aware, standard buy/sell orders are not (or at least off by 4 hours)
+- Performance doesn’t return data given a period
+- Values in Portfolio selector are auto set to 0
+- Sectors don’t work for allocation chart
+- Upon any form submit the dashboard should reload (order submission, cash submission, portfolio creation/deletion)
+- “All” view on dashboard does not work
+
+Features not implemented yet
+- export all data to csv
+- notifications
+- notes for orders
+- penguin in the top left
