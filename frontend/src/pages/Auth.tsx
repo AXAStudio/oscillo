@@ -110,12 +110,14 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <Card className="w-full max-w-md shadow-2xl border-border/50 backdrop-blur-sm">
         <CardHeader className="space-y-2 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="p-3 rounded-full bg-primary/10">
-              <TrendingUp className="h-8 w-8 text-primary" />
-            </div>
+          <div className="flex justify-center mb-1">
+              <img
+                src="/logo-192x192.png"  // lives in /public
+                alt="Oscillo logo"
+                className="h-16 w-16 rounded-lg object-cover"
+              />
           </div>
-          <CardTitle className="text-2xl font-bold">Oscillo Portfolio Tracker</CardTitle>
+          <CardTitle className="text-2xl font-bold">Welcome to Oscillo</CardTitle>
           <CardDescription>
             Sign in to manage your investment portfolios
           </CardDescription>
