@@ -231,8 +231,37 @@ const Dashboard = () => {
       dlog('positions queryFn firing with portfolioId:', selectedPortfolioId);
       if (!selectedPortfolioId) return [];
       if (USE_MOCK_DATA) return mockPositions;
+
+      // 👇 STEP 1: add raw + transformed logs
       const response = await api.positions.list(selectedPortfolioId);
-      return transformPositions(response);
+      dlog('[positions raw]', response);
+
+      const transformed = transformPositions(response);
+
+      const sample = transformed.slice(0, 5).map((p: any) => ({
+        ticker: p.ticker,
+        qty: p.quantity,
+        avgCost: p.avg_cost,
+        price: p.current_price,
+        mv: p.market_value,
+        cb: p.cost_basis,
+        'pnl$': p.pnl,
+        'pnl%': p.pnl_percentage,
+        'day%': p.day_change_percentage,
+        'alloc%': p.weight,
+      }));
+      dlog('[positions transformed sample]', sample);
+
+      // flag any non-finite numbers
+      const issues = transformed.filter((p: any) =>
+        [p.quantity, p.avg_cost, p.current_price, p.market_value, p.cost_basis, p.pnl, p.pnl_percentage, p.weight]
+          .some((v) => typeof v !== 'number' || !Number.isFinite(v))
+      );
+      if (issues.length) dlog('[positions transformed issues]', issues.slice(0, 3));
+
+
+
+      return transformed;
     },
     enabled: !!selectedPortfolioId,
   });

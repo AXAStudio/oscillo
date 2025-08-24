@@ -18,6 +18,14 @@ interface HoldingsTableProps {
   onExport?: () => void;
 }
 
+// Coerce strings / nulls / NaN to a finite number (default 0)
+const toNum = (v: unknown, fallback = 0): number => {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : fallback;
+  if (typeof v === 'bigint') return Number(v);
+  const n = v == null ? NaN : Number(String(v).replace(/[, ]/g, ''));
+  return Number.isFinite(n) ? n : fallback;
+};
+
 type SortKey = keyof Position;
 type SortOrder = 'asc' | 'desc';
 

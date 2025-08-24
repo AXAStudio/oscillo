@@ -1,39 +1,53 @@
-// Formatting utilities
-const toFinite = (v: unknown): number => {
-  const n = typeof v === 'bigint' ? Number(v) : Number(v);
-  return Number.isFinite(n) ? n : 0;
+// Formatting utilities (hardened)
+
+// Coerce anything -> finite number, stripping commas/spaces in strings.
+const toNum = (v: unknown, fallback = 0): number => {
+  if (typeof v === 'number') return Number.isFinite(v) ? v : fallback;
+  if (typeof v === 'bigint') return Number(v);
+  if (v == null) return fallback;
+  const n = Number(String(v).replace(/[, ]/g, '')); // <-- key: handle "1,234.56"
+  return Number.isFinite(n) ? n : fallback;
 };
 
-export const formatCurrency = (v: unknown, currency = 'USD', dp = 2): string => {
-  const n = toFinite(v);
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: dp,
-    maximumFractionDigits: dp,
-  }).format(n);
+export const formatCurrency = (value: unknown) => {
+  const n = toNum(value, 0);
+  try {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 2,
+    }).format(n);
+  } catch {
+    return `$${n.toFixed(2)}`;
+  }
 };
 
-export const formatNumber = (value: number, decimals = 2): string => {
+// Accept unknown; coerce via toNum so strings/nulls are fine.
+export const formatNumber = (value: unknown, decimals = 2): string => {
+  const n = toNum(value, 0);
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
-  }).format(value);
+  }).format(n);
 };
 
-export const formatPercent = (v: unknown, dp = 2): string => {
-  return `${toFinite(v).toFixed(dp)}%`;
+export const formatPercent = (value: unknown) => {
+  // value is already a percentage (e.g., 5.3 = 5.3%)
+  const n = toNum(value, 0);
+  return `${n.toFixed(2)}%`;
 };
 
+// Use the same coercion here for consistency
 export const formatAllocation = (v: unknown, dp = 1): string => {
-  return `${toFinite(v).toFixed(dp)}%`;
+  return `${toNum(v, 0).toFixed(dp)}%`;
 };
 
-export const formatCompactNumber = (value: number): string => {
+export const formatCompactNumber = (value: unknown): string => {
+  const n = toNum(value, 0);
   return new Intl.NumberFormat('en-US', {
     notation: 'compact',
     compactDisplay: 'short',
-  }).format(value);
+  }).format(n);
 };
 
 export const formatDate = (date: string | Date): string => {
