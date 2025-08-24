@@ -105,6 +105,16 @@ const Dashboard = () => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
+  // Persist selection per-user so we can auto-select on next load
+  const selectPortfolio = useCallback((p: Portfolio | undefined) => {
+    setSelectedPortfolio(p);
+    if (!USE_MOCK_DATA) {
+      const key = `oscillo:lastPortfolio:${user?.id ?? 'anon'}`;
+      if (p?.id) localStorage.setItem(key, p.id);
+      else localStorage.removeItem(key);
+    }
+  }, [USE_MOCK_DATA, user?.id]);
+
   // Check authentication (skip in mock mode)
   useEffect(() => {
     if (USE_MOCK_DATA) {
@@ -137,7 +147,7 @@ const Dashboard = () => {
   }, [navigate, selectedPortfolio]);
 
   // Data queries - use API or mock based on flag
-  const { data: portfolios = [] } = useQuery({
+  const { data: portfolios = [], isLoading: isPortfoliosLoading } = useQuery({
     queryKey: ['portfolios'],
     queryFn: async () => {
       if (USE_MOCK_DATA) {
@@ -146,6 +156,30 @@ const Dashboard = () => {
       return await api.portfolios.list();
     },
   });
+
+  // Restore last-selected portfolio when user + portfolios are ready
+  useEffect(() => {
+    if (USE_MOCK_DATA) return;
+    if (!user) return;
+    if (!portfolios.length) return;
+    if (selectedPortfolio) return; // don't override a manual selection
+
+    const key = `oscillo:lastPortfolio:${user.id}`;
+    const lastId = localStorage.getItem(key);
+    const found = lastId ? portfolios.find(p => p.id === lastId) : undefined;
+    if (found) {
+      setSelectedPortfolio(found);
+    }
+  }, [USE_MOCK_DATA, user, portfolios, selectedPortfolio]);
+
+  // Fallback: if none stored, pick the first portfolio
+  useEffect(() => {
+    if (USE_MOCK_DATA) return;
+    if (selectedPortfolio) return;
+    if (portfolios.length > 0) {
+      setSelectedPortfolio(portfolios[0]);
+    }
+  }, [USE_MOCK_DATA, portfolios, selectedPortfolio]);
 
   const { data: positions = [] } = useQuery({
     queryKey: ['positions', selectedPortfolio?.id],
@@ -271,7 +305,7 @@ const Dashboard = () => {
       // If deleting the current portfolio, select another one
       if (selectedPortfolio?.id === portfolioToDelete.id) {
         const remainingPortfolios = portfolios.filter(p => p.id !== portfolioToDelete.id);
-        setSelectedPortfolio(remainingPortfolios.length > 0 ? remainingPortfolios[0] : undefined);
+        selectPortfolio(remainingPortfolios.length > 0 ? remainingPortfolios[0] : undefined);
       }
       
       setShowDeleteDialog(false);
@@ -304,17 +338,14 @@ const Dashboard = () => {
     }
   };
 
-  // Persist selection per-user so we can auto-select on next load
-  const selectPortfolio = useCallback((p: Portfolio | undefined) => {
-    setSelectedPortfolio(p);
-    if (!USE_MOCK_DATA) {
-      const key = `oscillo:lastPortfolio:${user?.id ?? 'anon'}`;
-      if (p?.id) localStorage.setItem(key, p.id);
-      else localStorage.removeItem(key);
-    }
-  }, [USE_MOCK_DATA, user?.id]);
-
   if (!selectedPortfolio) {
+    if (!USE_MOCK_DATA && isPortfoliosLoading) {
+      return (
+        <div className="flex h-screen items-center justify-center p-4">
+          <div className="text-center text-muted-foreground">Loading portfolios…</div>
+        </div>
+      );
+    }
     return (
       <div className="flex h-screen items-center justify-center p-4">
         <div className="text-center">
@@ -463,7 +494,7 @@ const Dashboard = () => {
                 <PortfolioSwitcher
                   portfolios={portfolios}
                   selectedPortfolio={selectedPortfolio}
-                  onSelect={setSelectedPortfolio}
+                  onSelect={selectPortfolio}
                   onCreate={async (name, investment) => {
                     try {
                       if (USE_MOCK_DATA) {
@@ -533,7 +564,7 @@ const Dashboard = () => {
               <PortfolioSwitcher
                 portfolios={portfolios}
                 selectedPortfolio={selectedPortfolio}
-                onSelect={setSelectedPortfolio}
+                onSelect={selectPortfolio}
                 onCreate={async (name, investment) => {
                   try {
                     if (USE_MOCK_DATA) {
