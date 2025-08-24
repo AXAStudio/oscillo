@@ -446,9 +446,13 @@ const Dashboard = () => {
   const MobileNav = () => (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b border-border">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary-hover" />
-          <span className="text-xl font-bold text-foreground">Oscillo</span>
+        <div className="hidden md:flex items-center gap-2">
+            <img
+              src="/logo-192x192.png"  // lives in /public
+              alt="Oscillo logo"
+              className="h-8 w-8 rounded-lg object-cover"
+            />
+            <span className="text-xl font-bold text-foreground">Oscillo</span>
         </div>
       </div>
       <nav className="flex-1 p-4">
@@ -548,7 +552,11 @@ const Dashboard = () => {
                 )}
 
                 <div className="hidden md:flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary-hover" />
+                  <img
+                    src="/logo-192x192.png"  // lives in /public
+                    alt="Oscillo logo"
+                    className="h-8 w-8 rounded-lg object-cover"
+                  />
                   <span className="text-xl font-bold text-foreground">Oscillo</span>
                 </div>
 

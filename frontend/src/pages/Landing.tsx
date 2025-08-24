@@ -17,9 +17,13 @@ const Landing = () => {
       {/* Navigation */}
       <nav className="fixed top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-lg">
         <div className="container mx-auto flex h-16 items-center justify-between px-4 sm:px-6">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-primary-hover" />
-            <span className="text-lg sm:text-xl font-bold text-foreground">Oscillo</span>
+          <div className="hidden md:flex items-center gap-2">
+            <img
+              src="/logo-192x192.png"  // lives in /public
+              alt="Oscillo logo"
+              className="h-8 w-8 rounded-lg object-cover"
+            />
+            <span className="text-xl font-bold text-foreground">Oscillo</span>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
             <Button variant="ghost" size="sm" className="hidden sm:inline-flex" asChild>

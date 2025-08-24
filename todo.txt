@@ -12,4 +12,3 @@ Features not implemented yet
 - export all data to csv
 - notifications
 - notes for orders
-- penguin in the top left
