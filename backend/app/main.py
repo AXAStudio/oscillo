@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers import orders
 from app.routers import market
@@ -20,6 +21,19 @@ def build_app():
         title=TITLE,
         version=SEM_VER,
         description=DESCRIPTION,
+    )
+
+    origins = [
+        "http://localhost",
+        "http://localhost:8080",
+    ]
+
+    api.add_middleware(
+        CORSMiddleware,
+        allow_origins=origins,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     # Include routes

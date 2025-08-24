@@ -39,12 +39,15 @@ class PortfolioRequest(BaseModel):
 async def list_portfolios(request: Request):
     try:
         user_id = get_current_user_id(request)
-        return get_all_portfolios(user_id)
+        res = get_all_portfolios(user_id)
+        _logger.info("portfolio data: %s", str(res))
+        return res
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except HTTPException as e:
+        raise e
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @router.get("/{portfolio_id}")
 async def get_portfolio(
@@ -57,6 +60,8 @@ async def get_portfolio(
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except HTTPException as e:
+        raise e
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -81,6 +86,8 @@ async def add_portfolio(request: Request, new_portfolio: PortfolioRequest = Body
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except HTTPException as e:
+        raise e
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -92,6 +99,8 @@ async def remove_portfolio(portfolio_id: str, request: Request):
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except HTTPException as e:
+        raise e
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -111,5 +120,7 @@ async def get_positions(
         }
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    except HTTPException as e:
+        raise e
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

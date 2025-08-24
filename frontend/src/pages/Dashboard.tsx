@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -303,6 +303,16 @@ const Dashboard = () => {
       });
     }
   };
+
+  // Persist selection per-user so we can auto-select on next load
+  const selectPortfolio = useCallback((p: Portfolio | undefined) => {
+    setSelectedPortfolio(p);
+    if (!USE_MOCK_DATA) {
+      const key = `oscillo:lastPortfolio:${user?.id ?? 'anon'}`;
+      if (p?.id) localStorage.setItem(key, p.id);
+      else localStorage.removeItem(key);
+    }
+  }, [USE_MOCK_DATA, user?.id]);
 
   if (!selectedPortfolio) {
     return (
