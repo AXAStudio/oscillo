@@ -89,22 +89,22 @@ async def get_price_history(
         raise HTTPException(status_code=400, detail=str(e))
 
 
-@router.get("/search")
-async def ticker_search(
-    q : str
-):
-    """
-    Search for tickers based on query
-    """
+# @router.get("/search")
+# async def ticker_search(
+#     q : str
+# ):
+#     """
+#     Search for tickers based on query
+#     """
 
-    try:
-        ticker = await market.find_ticker(
-            q
-        )
+#     try:
+#         ticker = await market.find_ticker(
+#             q
+#         )
 
-        return ticker
+#         return ticker
 
-    except asyncio.TimeoutError:
-        raise HTTPException(status_code=504, detail="Request timed out while fetching market data.")
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+#     except asyncio.TimeoutError:
+#         raise HTTPException(status_code=504, detail="Request timed out while fetching market data.")
+#     except Exception as e:
+#         raise HTTPException(status_code=400, detail=str(e))

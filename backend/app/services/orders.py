@@ -10,7 +10,9 @@ from app.configs import config
 from app.models.types import OrderType
 from app.utils.logger import setup_logger
 from .positions import get_portfolio_positions
+from .market import get_ticker_metadata
 
+import asyncio
 
 _logger = setup_logger()
 
@@ -21,17 +23,24 @@ supabase = create_client(
 )
 
 
-def create_order(portfolio_id: str, ticker: str, quantity: int, price: float):
+async def create_order(portfolio_id: str, ticker: str, quantity: int, price: float):
     """
     Create order record
     """
     now = datetime.now().isoformat()
 
     _logger.info("Verifying order...")
-
+    if ticker.upper() != Order.CASH_TICKER:
+        metadata = await get_ticker_metadata(ticker)
+        _logger.info("Metadata fetched.")
+    else:
+        metadata = {"name": "N/A (Cash Holdings)", "sector": "Cash"}
+        _logger.info("Cash transaction detected.")
     new_order = Order(
         portfolio_id=portfolio_id,
         ticker=ticker,
+        name=metadata.get("name") or "Unknown",
+        sector=metadata.get("sector") or "Unknown",
         quantity=quantity,
         price=price,
         timestamp=now
@@ -54,6 +63,8 @@ def create_order(portfolio_id: str, ticker: str, quantity: int, price: float):
             "p_portfolio_id": portfolio_id,
             "p_ticker": new_order.ticker.upper(),
             "p_quantity": new_order.quantity,
+            "p_name": new_order.name,
+            "p_sector": new_order.sector,
         }
     ).execute()
 
@@ -70,6 +81,8 @@ def create_order(portfolio_id: str, ticker: str, quantity: int, price: float):
                 "p_portfolio_id": portfolio_id,
                 "p_ticker": Order.CASH_TICKER,
                 "p_quantity": cash_adjustment,
+                "p_name": new_order.name,
+                "p_sector": new_order.sector,
             }
         ).execute()
 

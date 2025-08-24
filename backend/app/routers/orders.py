@@ -50,11 +50,9 @@ async def add_order(
     Create a new order (buy or sell) for a given portfolio.
     """
     try:
-        _logger.info("Verifying user...")
         get_current_user_id(request)
 
-        _logger.info("Creating order...")
-        new_order = create_order(
+        new_order = await create_order(
             portfolio_id,
             order.ticker,
             order.quantity,

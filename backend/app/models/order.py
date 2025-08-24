@@ -21,6 +21,8 @@ class Order(BaseModel):
             self,
             portfolio_id: str,
             ticker: str,
+            name: str,
+            sector: str,
             quantity: int,
             price: float,
             id: str = None,
@@ -29,6 +31,8 @@ class Order(BaseModel):
         self.id = id
         self.portfolio_id = portfolio_id
         self.ticker = ticker
+        self.name = name
+        self.sector = sector
         self.quantity = quantity
         self.price = price
         self.timestamp = timestamp
