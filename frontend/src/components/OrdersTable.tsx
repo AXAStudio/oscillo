@@ -186,7 +186,7 @@ export const OrdersTable = ({ orders, onExport }: OrdersTableProps) => {
                     <TableCell>
                       <span className={cn(
                         'inline-flex items-center rounded-full px-2 py-1 text-xs font-medium',
-                        side === 'Buy' 
+                        side === 'Buy'
                           ? 'bg-success/10 text-success' 
                           : 'bg-destructive/10 text-destructive'
                       )}>

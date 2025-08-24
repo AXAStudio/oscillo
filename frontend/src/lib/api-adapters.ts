@@ -174,12 +174,19 @@ export function transformPositions(response: PositionsResponse): UiPosition[] {
 // ---------------------- Orders ----------------------
 export function transformOrders(response: OrdersResponse): any[] {
   const list = (response as any)?.orders ?? [];
-  return list.map((order: any) => ({
-    ...order,
-    type: toNum(order?.quantity, 0) > 0 ? 'BUY' : 'SELL',
-    quantity: Math.abs(toNum(order?.quantity, 0)),
-  }));
+  return list.map((order: any) => {
+    const signed = toNum(order?.quantity, 0);
+    const side = signed < 0 ? 'SELL' : 'BUY';
+    return {
+      ...order,
+      side,                 // normalized side
+      type: side,           // keep legacy 'type' field too
+      quantity: signed,     // IMPORTANT: keep the SIGN (negative = sell)
+      abs_quantity: Math.abs(signed), // optional convenience for UIs
+    };
+  });
 }
+
 
 // ---------------------- Performance ----------------------
 export function transformPerformanceData(data: PerformanceData): any[] {
