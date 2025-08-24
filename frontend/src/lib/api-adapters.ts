@@ -151,6 +151,7 @@ export function transformPositions(response: PositionsResponse): UiPosition[] {
         id,
         ticker: String(ticker).toUpperCase(),
         name: typeof p?.name === 'string' ? p.name : undefined,
+        sector: p?.sector ?? null,
         quantity,
         avg_cost,
         current_price,

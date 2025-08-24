@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { formatCurrency } from '@/lib/format';
-import { api, type QuotesResponse } from '@/lib/api';
+import { api, type MarketQuote } from '@/lib/api';
 
 interface OrderFormProps {
   ticker?: string;
@@ -34,7 +34,7 @@ export const OrderForm = ({ ticker = '', onSubmit }: OrderFormProps) => {
 
   const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const parsePrice = (res: QuotesResponse | undefined, tkr: string) => {
+  const parsePrice = (res: MarketQuote | undefined, tkr: string) => {
     const q = res?.[tkr];
     const p =
       typeof q?.price === 'number' && !Number.isNaN(q.price)
@@ -49,7 +49,7 @@ export const OrderForm = ({ ticker = '', onSubmit }: OrderFormProps) => {
     if (!tkr) return;
     setIsFetching(true);
     try {
-      const res = (await api.market.quotes([tkr])) as QuotesResponse;
+      const res = (await api.market.quotes([tkr])) as MarketQuote;
       const newPrice = parsePrice(res, tkr);
       if (typeof newPrice === 'number') {
         setPrice(newPrice);
