@@ -194,7 +194,31 @@ const fetchWithAuth = async (url: string, options?: RequestInit) => {
 export const api = {
   // Portfolios
   portfolios: {
-    list: () => fetchWithAuth("/portfolios"),
+    list: async () => {
+      const list = await fetchWithAuth('/portfolios');
+      if (!Array.isArray(list) || list.length === 0) return list ?? [];
+
+      // Enrich items that lack present_value using GET /portfolios/{id}
+      const enriched = await Promise.all(
+        list.map(async (p: Portfolio) => {
+          if (typeof p?.present_value === 'number') return p;
+          try {
+            const detail = await fetchWithAuth(`/portfolios/${p.id}`);
+            const pv =
+              typeof detail?.present_value === 'number'
+                ? detail.present_value
+                : Array.isArray(detail?.performance?.['pv:TOTAL'])
+                ? detail.performance['pv:TOTAL'].at(-1) ?? null
+                : null;
+            return { ...p, present_value: pv };
+          } catch {
+            // If detail fetch fails, return original portfolio untouched
+            return p;
+          }
+        })
+      );
+      return enriched;
+    },
     get: (id: string) => fetchWithAuth(`/portfolios/${id}`),
     create: (data: { name: string; initial_investment: number }) =>
       fetchWithAuth("/portfolios", {
