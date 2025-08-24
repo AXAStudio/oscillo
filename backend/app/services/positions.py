@@ -20,9 +20,11 @@ def get_portfolio_positions(portfolio_id: str) -> Dict[str, Any]:
     Returns: { "<TICKER>": { ...all row fields incl. portfolio_id } }
     """
     res = supabase.table(config.DB_SCHEMA.POSITIONS)\
-        .select("ticker, portfolio_id, quantity, created_at, updated_at")\
+        .select("ticker, portfolio_id, name, sector, quantity, created_at, updated_at")\
         .eq("portfolio_id", portfolio_id)\
         .execute()
+
+    
 
     items = res.data or []
 
