@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { USE_MOCK_DATA } from "@/App";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +17,12 @@ const Auth = () => {
   const [password, setPassword] = useState("");
 
   useEffect(() => {
+    // Skip auth in mock mode
+    if (USE_MOCK_DATA) {
+      navigate("/dashboard");
+      return;
+    }
+
     // Check if user is already logged in
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {

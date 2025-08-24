@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, ChevronsUpDown, Plus, Briefcase } from 'lucide-react';
+import { Check, ChevronsUpDown, Plus, Briefcase, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,6 +35,7 @@ interface PortfolioSwitcherProps {
   selectedPortfolio?: Portfolio;
   onSelect: (portfolio: Portfolio) => void;
   onCreate?: (name: string, initialInvestment: number) => void;
+  onDelete?: (portfolio: Portfolio) => void;
 }
 
 export const PortfolioSwitcher = ({
@@ -42,6 +43,7 @@ export const PortfolioSwitcher = ({
   selectedPortfolio,
   onSelect,
   onCreate,
+  onDelete,
 }: PortfolioSwitcherProps) => {
   const [open, setOpen] = useState(false);
   const [showNewPortfolioDialog, setShowNewPortfolioDialog] = useState(false);
@@ -91,6 +93,7 @@ export const PortfolioSwitcher = ({
                       onSelect(portfolio);
                       setOpen(false);
                     }}
+                    className="group"
                   >
                     <Check
                       className={cn(
@@ -106,6 +109,20 @@ export const PortfolioSwitcher = ({
                         {formatCurrency(portfolio.present_value || 0)}
                       </div>
                     </div>
+                    {onDelete && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(portfolio);
+                          setOpen(false);
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    )}
                   </CommandItem>
                 ))}
               </CommandGroup>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
@@ -33,6 +33,7 @@ import { MobileHoldingsView } from '@/components/MobileHoldingsView';
 import { OrderForm } from '@/components/OrderForm';
 import { OrdersTable } from '@/components/OrdersTable';
 import { MobileOrdersView } from '@/components/MobileOrdersView';
+import { DeletePortfolioDialog } from '@/components/DeletePortfolioDialog';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -43,6 +44,13 @@ import {
   mockOrders,
 } from '@/lib/mock-data';
 import type { Portfolio } from '@/lib/api';
+import { api } from '@/lib/api';
+import { 
+  transformPositions, 
+  transformOrders, 
+  transformPerformanceData,
+  getCashPosition 
+} from '@/lib/api-adapters';
 import { calculatePortfolioMetrics } from '@/lib/portfolio-utils';
 
 type Period = '1D' | '1W' | '1M' | 'YTD' | '1Y' | 'ALL';
@@ -85,12 +93,15 @@ const getPeriodLabel = (period: Period): string => {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | undefined>();
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('1M');
   const [performanceViewMode, setPerformanceViewMode] = useState<'value' | 'percentage'>('value');
   const [showOrderPanel, setShowOrderPanel] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [portfolioToDelete, setPortfolioToDelete] = useState<Portfolio | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -125,30 +136,66 @@ const Dashboard = () => {
     return () => subscription.unsubscribe();
   }, [navigate, selectedPortfolio]);
 
-  // Mock queries - replace with real API calls
-  const { data: portfolios = mockPortfolios } = useQuery({
+  // Data queries - use API or mock based on flag
+  const { data: portfolios = [] } = useQuery({
     queryKey: ['portfolios'],
-    queryFn: async () => mockPortfolios,
+    queryFn: async () => {
+      if (USE_MOCK_DATA) {
+        return mockPortfolios;
+      }
+      return await api.portfolios.list();
+    },
   });
 
-  const { data: positions = mockPositions } = useQuery({
+  const { data: positions = [] } = useQuery({
     queryKey: ['positions', selectedPortfolio?.id],
-    queryFn: async () => mockPositions,
+    queryFn: async () => {
+      if (!selectedPortfolio?.id) return [];
+      
+      if (USE_MOCK_DATA) {
+        return mockPositions;
+      }
+      
+      const response = await api.positions.list(selectedPortfolio.id);
+      return transformPositions(response);
+    },
     enabled: !!selectedPortfolio,
   });
 
   const { data: performanceData = [] } = useQuery({
     queryKey: ['performance', selectedPortfolio?.id, selectedPeriod],
-    queryFn: async () => generatePerformanceData(selectedPeriod),
+    queryFn: async () => {
+      if (!selectedPortfolio?.id) return [];
+      
+      if (USE_MOCK_DATA) {
+        return generatePerformanceData(selectedPeriod);
+      }
+      
+      const response = await api.performance.get(selectedPortfolio.id, selectedPeriod);
+      return transformPerformanceData(response);
+    },
     enabled: !!selectedPortfolio,
   });
 
-  const { data: orders = mockOrders } = useQuery({
+  const { data: orders = [] } = useQuery({
     queryKey: ['orders', selectedPortfolio?.id, selectedPeriod],
     queryFn: async () => {
+      if (!selectedPortfolio?.id) return [];
+      
+      if (USE_MOCK_DATA) {
+        const periodStart = getPeriodStartDate(selectedPeriod);
+        return mockOrders.filter(o => 
+          o.portfolio_id === selectedPortfolio.id &&
+          new Date(o.timestamp) >= periodStart
+        );
+      }
+      
+      const response = await api.orders.list(selectedPortfolio.id);
+      const transformedOrders = transformOrders(response);
+      
+      // Filter orders by period
       const periodStart = getPeriodStartDate(selectedPeriod);
-      return mockOrders.filter(o => 
-        o.portfolio_id === selectedPortfolio?.id &&
+      return transformedOrders.filter(o => 
         new Date(o.timestamp) >= periodStart
       );
     },
@@ -162,9 +209,80 @@ const Dashboard = () => {
     });
   };
 
-  const handleOrderSubmit = (order: any) => {
-    console.log('Order submitted:', order);
-    setShowOrderPanel(false);
+  const handleOrderSubmit = async (order: any) => {
+    if (!selectedPortfolio) return;
+    
+    try {
+      if (USE_MOCK_DATA) {
+        // In mock mode, just show a success message
+        toast({
+          title: 'Order placed',
+          description: `${order.orderType} order for ${order.quantity} shares of ${order.ticker} placed successfully.`,
+        });
+      } else {
+        // Use API to create order
+        const quantity = order.orderType === 'SELL' ? -order.quantity : order.quantity;
+        await api.orders.create(selectedPortfolio.id, {
+          ticker: order.ticker,
+          quantity,
+          price: order.price,
+        });
+        toast({
+          title: 'Order placed',
+          description: `Your order has been executed successfully.`,
+        });
+        // Refetch orders and positions
+        queryClient.invalidateQueries({ queryKey: ['orders', selectedPortfolio.id] });
+        queryClient.invalidateQueries({ queryKey: ['positions', selectedPortfolio.id] });
+      }
+      setShowOrderPanel(false);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to place order. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleDeletePortfolio = async (portfolio: Portfolio) => {
+    setPortfolioToDelete(portfolio);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDeletePortfolio = async () => {
+    if (!portfolioToDelete) return;
+
+    try {
+      if (USE_MOCK_DATA) {
+        toast({
+          title: 'Portfolio deleted',
+          description: `${portfolioToDelete.name} has been deleted successfully.`,
+        });
+      } else {
+        await api.portfolios.delete(portfolioToDelete.id);
+        toast({
+          title: 'Portfolio deleted',
+          description: `${portfolioToDelete.name} has been deleted successfully.`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['portfolios'] });
+      }
+      
+      // If deleting the current portfolio, select another one
+      if (selectedPortfolio?.id === portfolioToDelete.id) {
+        const remainingPortfolios = portfolios.filter(p => p.id !== portfolioToDelete.id);
+        setSelectedPortfolio(remainingPortfolios.length > 0 ? remainingPortfolios[0] : undefined);
+      }
+      
+      setShowDeleteDialog(false);
+      setPortfolioToDelete(null);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete portfolio. Please try again.',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleSignOut = async () => {
@@ -204,7 +322,11 @@ const Dashboard = () => {
   }
 
   // Calculate portfolio metrics
-  const portfolioMetrics = calculatePortfolioMetrics(selectedPortfolio, positions, mockOrders);
+  const portfolioMetrics = calculatePortfolioMetrics(
+    selectedPortfolio, 
+    positions, 
+    USE_MOCK_DATA ? mockOrders : orders
+  );
   
   // Calculate period P&L based on performance data
   const calculatePeriodPnL = () => {
@@ -332,12 +454,30 @@ const Dashboard = () => {
                   portfolios={portfolios}
                   selectedPortfolio={selectedPortfolio}
                   onSelect={setSelectedPortfolio}
-                  onCreate={(name, investment) => {
-                    toast({
-                      title: 'Portfolio Created',
-                      description: `${name} has been created with ${investment} initial investment.`,
-                    });
+                  onCreate={async (name, investment) => {
+                    try {
+                      if (USE_MOCK_DATA) {
+                        toast({
+                          title: 'Portfolio Created',
+                          description: `${name} has been created with ${investment} initial investment.`,
+                        });
+                      } else {
+                        await api.portfolios.create({ name, initial_investment: investment });
+                        toast({
+                          title: 'Portfolio Created',
+                          description: `${name} has been created successfully.`,
+                        });
+                        queryClient.invalidateQueries({ queryKey: ['portfolios'] });
+                      }
+                    } catch (error) {
+                      toast({
+                        title: 'Error',
+                        description: 'Failed to create portfolio.',
+                        variant: 'destructive',
+                      });
+                    }
                   }}
+                  onDelete={handleDeletePortfolio}
                 />
               </div>
               
@@ -384,12 +524,30 @@ const Dashboard = () => {
                 portfolios={portfolios}
                 selectedPortfolio={selectedPortfolio}
                 onSelect={setSelectedPortfolio}
-                onCreate={(name, investment) => {
-                  toast({
-                    title: 'Portfolio Created',
-                    description: `${name} has been created.`,
-                  });
+                onCreate={async (name, investment) => {
+                  try {
+                    if (USE_MOCK_DATA) {
+                      toast({
+                        title: 'Portfolio Created',
+                        description: `${name} has been created with ${investment} initial investment.`,
+                      });
+                    } else {
+                      await api.portfolios.create({ name, initial_investment: investment });
+                      toast({
+                        title: 'Portfolio Created',
+                        description: `${name} has been created successfully.`,
+                      });
+                      queryClient.invalidateQueries({ queryKey: ['portfolios'] });
+                    }
+                  } catch (error) {
+                    toast({
+                      title: 'Error',
+                      description: 'Failed to create portfolio.',
+                      variant: 'destructive',
+                    });
+                  }
                 }}
+                onDelete={handleDeletePortfolio}
               />
             </div>
           )}
@@ -549,6 +707,14 @@ const Dashboard = () => {
           </TooltipContent>
         )}
       </Tooltip>
+      
+      {/* Delete Portfolio Dialog */}
+      <DeletePortfolioDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        portfolio={portfolioToDelete}
+        onConfirm={confirmDeletePortfolio}
+      />
     </div>
     </TooltipProvider>
   );

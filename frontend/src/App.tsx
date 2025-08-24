@@ -10,7 +10,8 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 // Development bypass - set to true to use mock data without auth
-export const USE_MOCK_DATA = import.meta.env.DEV || true;
+// Set to false to use real API and authentication
+export const USE_MOCK_DATA = false;
 
 const queryClient = new QueryClient({
   defaultOptions: {
