@@ -6,6 +6,7 @@ Bugs
 - Sectors don’t work for allocation chart
 - Upon any form submit the dashboard should reload (already does it on order submission but should also do it on cash submission and portfolio creation/deletion)
 - “All” view on dashboard does not work
+- P&L (both value and percent) doesn't show properly for holdings table
 
 Features not implemented yet
 - export all data to csv
