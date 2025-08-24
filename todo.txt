@@ -1,6 +1,5 @@
 Bugs
 - Export data to csv does not work
-- Cash orders are timezone aware, standard buy/sell orders are not (or at least off by 4 hours)
 - Performance doesn’t return data given a period
 - Values in Portfolio selector are auto set to 0
 - Upon any form submit the dashboard should reload (already does it on order submission but should also do it on cash submission and portfolio creation/deletion)
