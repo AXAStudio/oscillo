@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils';
 import { mockPortfolios, mockPositions, generatePerformanceData, mockOrders } from '@/lib/mock-data';
 import type { Portfolio } from '@/lib/api';
 import { api } from '@/lib/api';
-import { transformPositions, transformOrders, transformPerformanceData } from '@/lib/api-adapters';
+import { transformPositions, transformOrders, transformMarketQuotes, transformPerformanceData } from '@/lib/api-adapters';
 import { calculatePortfolioMetrics } from '@/lib/portfolio-utils';
 
 type Period = '1D' | '1W' | '1M' | 'YTD' | '1Y' | 'ALL';
@@ -232,11 +232,33 @@ const Dashboard = () => {
       if (!selectedPortfolioId) return [];
       if (USE_MOCK_DATA) return mockPositions;
 
-      // 👇 STEP 1: add raw + transformed logs
+      // 1) Fetch raw positions
       const response = await api.positions.list(selectedPortfolioId);
       dlog('[positions raw]', response);
 
-      const transformed = transformPositions(response);
+      // 2) Collect tickers (support map or array; exclude cash)
+      const rawPositions: any[] = Array.isArray((response as any)?.positions)
+        ? (response as any).positions
+        : Object.values((response as any)?.positions ?? {});
+      const tickers = [...new Set(rawPositions
+        .map((p: any) => p?.ticker)
+        .filter((t: any) => t && t !== 'CA$H'))] as string[];
+      dlog('[positions tickers]', tickers);
+
+      // 3) Fetch market quotes if we have tickers
+      let quotesByTicker: Record<string, any> = {};
+      if (tickers.length > 0) {
+        const rawQuotes = await api.market.quotes(tickers);
+        quotesByTicker = transformMarketQuotes(rawQuotes);
+        dlog('[quotes normalized]', Object.keys(quotesByTicker));
+      }
+
+      // 4) Let the adapter compute price, MV, PnL, etc.
+      const transformed = transformPositions({
+        ...(response as any),
+        quotes: quotesByTicker,
+        market_quotes: quotesByTicker, // adapter checks either key
+      });
 
       const sample = transformed.slice(0, 5).map((p: any) => ({
         ticker: p.ticker,
