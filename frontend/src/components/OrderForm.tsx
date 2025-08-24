@@ -45,8 +45,8 @@ export const OrderForm = ({ ticker = '', currentPrice = 0, onSubmit }: OrderForm
 
     onSubmit?.({
       ticker: orderTicker,
-      type: orderType,
-      quantity: parseFloat(quantity),
+      type: orderType, // Keep for backward compatibility
+      quantity: orderType === 'SELL' ? -parseFloat(quantity) : parseFloat(quantity),
       price: parseFloat(price),
       notes: notes || undefined,
     });

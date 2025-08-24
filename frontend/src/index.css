@@ -8,79 +8,173 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* Dark theme by default - Professional financial dashboard */
-    --background: 220 15% 5%;
-    --foreground: 220 15% 95%;
+    /* Light mode - Warm, earthy palette */
+    --background: 39 47% 82%; /* Warm Cream */
+    --foreground: 0 0% 10%; /* Charcoal Black */
 
-    --card: 220 15% 8%;
-    --card-foreground: 220 15% 95%;
-    --card-hover: 220 15% 10%;
+    --card: 39 30% 95%; /* Soft warm white with cream tint */
+    --card-foreground: 0 0% 10%; /* Charcoal */
+    --card-hover: 39 35% 92%; /* Slightly warmer on hover */
 
-    --popover: 220 15% 10%;
-    --popover-foreground: 220 15% 95%;
+    --popover: 0 0% 100%; /* Soft White */
+    --popover-foreground: 0 0% 10%; /* Charcoal */
 
-    --primary: 239 84% 67%;
-    --primary-foreground: 220 15% 5%;
-    --primary-hover: 239 84% 75%;
-    --primary-glow: 239 84% 67%;
+    --primary: 14 58% 41%; /* Rusty Red */
+    --primary-foreground: 0 0% 100%; /* White */
+    --primary-hover: 19 55% 52%; /* Terracotta */
+    --primary-glow: 19 55% 52%; /* Terracotta */
 
-    --secondary: 220 15% 13%;
-    --secondary-foreground: 220 15% 95%;
-    --secondary-hover: 220 15% 16%;
+    --secondary: 19 55% 52%; /* Terracotta */
+    --secondary-foreground: 0 0% 100%; /* White */
+    --secondary-hover: 19 55% 58%; /* Lighter Terracotta */
 
-    --muted: 220 15% 20%;
-    --muted-foreground: 220 15% 60%;
+    --muted: 0 0% 42%; /* Mid Gray */
+    --muted-foreground: 0 0% 29%; /* Slate Gray */
 
-    --accent: 239 84% 67%;
-    --accent-foreground: 220 15% 5%;
+    --accent: 212 49% 33%; /* Chart Accent Blue */
+    --accent-foreground: 0 0% 100%; /* White */
 
-    --destructive: 0 72% 51%;
-    --destructive-foreground: 0 0% 100%;
+    /* Trading specific colors */
+    --profit: 131 38% 30%; /* Profit Green */
+    --profit-hover: 131 35% 37%; /* Profit Green Hover */
+    --profit-foreground: 0 0% 100%; /* White */
+    
+    --loss: 14 58% 41%; /* Same as Rusty Red */
+    --loss-hover: 19 55% 52%; /* Same as Terracotta */
+    --loss-foreground: 0 0% 100%; /* White */
 
-    --success: 142 71% 45%;
-    --success-foreground: 0 0% 100%;
+    --destructive: 14 58% 41%; /* Rusty Red for errors */
+    --destructive-foreground: 0 0% 100%; /* White */
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 220 15% 5%;
+    --success: 131 38% 30%; /* Profit Green */
+    --success-foreground: 0 0% 100%; /* White */
 
-    --border: 220 15% 15%;
-    --input: 220 15% 13%;
-    --ring: 239 84% 67%;
+    --warning: 42 55% 51%; /* Chart Accent Gold */
+    --warning-foreground: 0 0% 10%; /* Charcoal */
+
+    --border: 0 0% 85%; /* Light Gray */
+    --input: 0 0% 100%; /* White */
+    --ring: 14 58% 41%; /* Rusty Red */
 
     --radius: 0.375rem;
 
     /* Chart colors */
-    --chart-primary: 239 84% 67%;
-    --chart-secondary: 142 71% 45%;
-    --chart-tertiary: 38 92% 50%;
-    --chart-quaternary: 0 72% 51%;
-    --chart-grid: 220 15% 15%;
+    --chart-profit: 131 35% 37%; /* Chart Profit Line */
+    --chart-loss: 14 58% 41%; /* Chart Loss Line */
+    --chart-primary: 14 58% 41%; /* Rusty Red */
+    --chart-secondary: 131 35% 37%; /* Profit Green */
+    --chart-tertiary: 212 49% 33%; /* Chart Accent Blue */
+    --chart-quaternary: 42 55% 51%; /* Chart Accent Gold */
+    --chart-grid: 0 0% 85%; /* Light Gray */
 
     /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(239 84% 67%), hsl(239 84% 50%));
-    --gradient-success: linear-gradient(135deg, hsl(142 71% 45%), hsl(142 71% 35%));
-    --gradient-danger: linear-gradient(135deg, hsl(0 72% 51%), hsl(0 72% 41%));
-    --gradient-subtle: linear-gradient(180deg, hsl(220 15% 8%), hsl(220 15% 5%));
-    --gradient-chart: linear-gradient(180deg, hsl(239 84% 67% / 0.3), transparent);
+    --gradient-primary: linear-gradient(135deg, hsl(14 58% 41%), hsl(19 55% 52%));
+    --gradient-success: linear-gradient(135deg, hsl(131 38% 30%), hsl(131 35% 37%));
+    --gradient-danger: linear-gradient(135deg, hsl(14 58% 41%), hsl(19 55% 52%));
+    --gradient-subtle: linear-gradient(180deg, hsl(39 47% 88%), hsl(39 47% 82%));
+    --gradient-chart: linear-gradient(180deg, hsl(14 58% 41% / 0.2), transparent);
 
     /* Shadows */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-    --shadow-glow: 0 0 30px rgb(147 197 253 / 0.3);
+    --shadow-sm: 0 1px 2px 0 rgb(26 26 26 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(26 26 26 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(26 26 26 / 0.1);
+    --shadow-glow: 0 0 30px rgb(165 72 44 / 0.2);
 
     /* Animations */
     --transition-base: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-    --sidebar-background: 220 15% 7%;
-    --sidebar-foreground: 220 15% 90%;
-    --sidebar-primary: 239 84% 67%;
-    --sidebar-primary-foreground: 220 15% 5%;
-    --sidebar-accent: 220 15% 13%;
-    --sidebar-accent-foreground: 220 15% 95%;
-    --sidebar-border: 220 15% 15%;
-    --sidebar-ring: 239 84% 67%;
+    /* Sidebar */
+    --sidebar-background: 0 0% 100%; /* White */
+    --sidebar-foreground: 0 0% 10%; /* Charcoal */
+    --sidebar-primary: 14 58% 41%; /* Rusty Red */
+    --sidebar-primary-foreground: 0 0% 100%; /* White */
+    --sidebar-accent: 39 47% 88%; /* Light Cream */
+    --sidebar-accent-foreground: 0 0% 10%; /* Charcoal */
+    --sidebar-border: 0 0% 85%; /* Light Gray */
+    --sidebar-ring: 14 58% 41%; /* Rusty Red */
+  }
+
+  .dark {
+    /* Dark mode - Inverted palette */
+    --background: 0 0% 10%; /* Charcoal */
+    --foreground: 0 0% 100%; /* White */
+
+    --card: 0 0% 13%; /* Slightly lighter than background */
+    --card-foreground: 0 0% 100%; /* White */
+    --card-hover: 0 0% 16%; /* Hover state */
+
+    --popover: 0 0% 13%; /* Same as card */
+    --popover-foreground: 0 0% 100%; /* White */
+
+    --primary: 14 58% 41%; /* Rusty Red stays same */
+    --primary-foreground: 0 0% 100%; /* White */
+    --primary-hover: 19 55% 52%; /* Terracotta */
+    --primary-glow: 19 55% 52%; /* Terracotta */
+
+    --secondary: 19 55% 52%; /* Terracotta */
+    --secondary-foreground: 0 0% 100%; /* White */
+    --secondary-hover: 19 55% 58%; /* Lighter Terracotta */
+
+    --muted: 0 0% 29%; /* Slate Gray */
+    --muted-foreground: 0 0% 60%; /* Lighter gray for dark mode */
+
+    --accent: 212 49% 33%; /* Chart Accent Blue */
+    --accent-foreground: 0 0% 100%; /* White */
+
+    /* Trading specific colors remain consistent */
+    --profit: 131 38% 30%; /* Profit Green */
+    --profit-hover: 131 35% 37%; /* Profit Green Hover */
+    --profit-foreground: 0 0% 100%; /* White */
+    
+    --loss: 14 58% 41%; /* Same as Rusty Red */
+    --loss-hover: 19 55% 52%; /* Same as Terracotta */
+    --loss-foreground: 0 0% 100%; /* White */
+
+    --destructive: 14 58% 41%; /* Rusty Red */
+    --destructive-foreground: 0 0% 100%; /* White */
+
+    --success: 131 38% 30%; /* Profit Green */
+    --success-foreground: 0 0% 100%; /* White */
+
+    --warning: 42 55% 51%; /* Chart Accent Gold */
+    --warning-foreground: 0 0% 10%; /* Charcoal */
+
+    --border: 0 0% 20%; /* Dark border */
+    --input: 0 0% 13%; /* Slightly lighter than background */
+    --ring: 14 58% 41%; /* Rusty Red */
+
+    /* Chart colors */
+    --chart-profit: 131 35% 37%; /* Chart Profit Line */
+    --chart-loss: 14 58% 41%; /* Chart Loss Line */
+    --chart-primary: 14 58% 41%; /* Rusty Red */
+    --chart-secondary: 131 35% 37%; /* Profit Green */
+    --chart-tertiary: 212 49% 33%; /* Chart Accent Blue */
+    --chart-quaternary: 42 55% 51%; /* Chart Accent Gold */
+    --chart-grid: 0 0% 20%; /* Dark grid */
+
+    /* Gradients for dark mode */
+    --gradient-primary: linear-gradient(135deg, hsl(14 58% 41%), hsl(19 55% 52%));
+    --gradient-success: linear-gradient(135deg, hsl(131 38% 30%), hsl(131 35% 37%));
+    --gradient-danger: linear-gradient(135deg, hsl(14 58% 41%), hsl(19 55% 52%));
+    --gradient-subtle: linear-gradient(180deg, hsl(0 0% 13%), hsl(0 0% 10%));
+    --gradient-chart: linear-gradient(180deg, hsl(14 58% 41% / 0.2), transparent);
+
+    /* Shadows for dark mode */
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.1);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.2);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.2);
+    --shadow-glow: 0 0 30px rgb(165 72 44 / 0.3);
+
+    /* Sidebar for dark mode */
+    --sidebar-background: 0 0% 8%; /* Darker than main background */
+    --sidebar-foreground: 0 0% 90%; /* Slightly dimmed white */
+    --sidebar-primary: 14 58% 41%; /* Rusty Red */
+    --sidebar-primary-foreground: 0 0% 100%; /* White */
+    --sidebar-accent: 0 0% 13%; /* Slightly lighter */
+    --sidebar-accent-foreground: 0 0% 100%; /* White */
+    --sidebar-border: 0 0% 20%; /* Dark border */
+    --sidebar-ring: 14 58% 41%; /* Rusty Red */
   }
 }
 
@@ -103,15 +197,27 @@ All colors MUST be HSL.
   }
 
   ::-webkit-scrollbar-track {
-    background: hsl(220 15% 10%);
+    background: hsl(0 0% 90%);
   }
 
   ::-webkit-scrollbar-thumb {
-    background: hsl(220 15% 20%);
+    background: hsl(0 0% 60%);
     border-radius: 4px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(220 15% 25%);
+    background: hsl(0 0% 50%);
+  }
+  
+  .dark ::-webkit-scrollbar-track {
+    background: hsl(0 0% 10%);
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: hsl(0 0% 20%);
+  }
+
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: hsl(0 0% 25%);
   }
 }

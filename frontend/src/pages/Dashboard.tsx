@@ -1,6 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
+import { USE_MOCK_DATA } from '@/App';
 import { 
   Settings, 
   LogOut, 
@@ -17,37 +20,110 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from '@/components/ui/drawer';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { PortfolioSwitcher } from '@/components/PortfolioSwitcher';
+import CreatePortfolioDialog from '@/components/CreatePortfolioDialog';
+import CashDialog from '@/components/CashDialog';
+import DeleteAccountDialog from '@/components/DeleteAccountDialog';
 import { KpiCard } from '@/components/KpiCard';
 import { PerformanceChart } from '@/components/PerformanceChart';
 import { AllocationDonut } from '@/components/AllocationDonut';
 import { HoldingsTable } from '@/components/HoldingsTable';
 import { MobileHoldingsView } from '@/components/MobileHoldingsView';
 import { OrderForm } from '@/components/OrderForm';
-import { TickerSearch } from '@/components/TickerSearch';
+import { OrdersTable } from '@/components/OrdersTable';
+import { MobileOrdersView } from '@/components/MobileOrdersView';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import {
   mockPortfolios,
   mockPositions,
-  mockSearchResults,
-  mockQuotes,
   generatePerformanceData,
+  mockOrders,
 } from '@/lib/mock-data';
 import type { Portfolio } from '@/lib/api';
+import { calculatePortfolioMetrics } from '@/lib/portfolio-utils';
 
 type Period = '1D' | '1W' | '1M' | 'YTD' | '1Y' | 'ALL';
 
+const getPeriodStartDate = (period: Period): Date => {
+  const now = new Date();
+  const startOfDay = new Date(now);
+  startOfDay.setHours(0, 0, 0, 0);
+  
+  switch (period) {
+    case '1D':
+      return startOfDay;
+    case '1W':
+      return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    case '1M':
+      return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    case 'YTD':
+      const yearStart = new Date(now.getFullYear(), 0, 1);
+      return yearStart;
+    case '1Y':
+      return new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+    case 'ALL':
+      return new Date(0); // Beginning of time
+    default:
+      return startOfDay;
+  }
+};
+
+const getPeriodLabel = (period: Period): string => {
+  switch (period) {
+    case '1D': return 'Day';
+    case '1W': return 'Week';
+    case '1M': return 'Month';
+    case 'YTD': return 'YTD';
+    case '1Y': return 'Year';
+    case 'ALL': return 'All-Time';
+    default: return 'Period';
+  }
+};
+
 const Dashboard = () => {
-  const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | undefined>(
-    mockPortfolios[0]
-  );
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+  const [selectedPortfolio, setSelectedPortfolio] = useState<Portfolio | undefined>();
   const [selectedPeriod, setSelectedPeriod] = useState<Period>('1M');
+  const [performanceViewMode, setPerformanceViewMode] = useState<'value' | 'percentage'>('value');
   const [showOrderPanel, setShowOrderPanel] = useState(false);
   const [showMobileMenu, setShowMobileMenu] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
+
+  // Check authentication (skip in mock mode)
+  useEffect(() => {
+    if (USE_MOCK_DATA) {
+      // In mock mode, use a fake user
+      setUser({ email: 'dev@example.com' } as User);
+      // Auto-select first portfolio in mock mode
+      if (mockPortfolios.length > 0 && !selectedPortfolio) {
+        setSelectedPortfolio(mockPortfolios[0]);
+      }
+      return;
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate('/auth');
+      } else {
+        setUser(session.user);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        navigate('/auth');
+      } else if (session) {
+        setUser(session.user);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate, selectedPortfolio]);
 
   // Mock queries - replace with real API calls
   const { data: portfolios = mockPortfolios } = useQuery({
@@ -67,6 +143,18 @@ const Dashboard = () => {
     enabled: !!selectedPortfolio,
   });
 
+  const { data: orders = mockOrders } = useQuery({
+    queryKey: ['orders', selectedPortfolio?.id, selectedPeriod],
+    queryFn: async () => {
+      const periodStart = getPeriodStartDate(selectedPeriod);
+      return mockOrders.filter(o => 
+        o.portfolio_id === selectedPortfolio?.id &&
+        new Date(o.timestamp) >= periodStart
+      );
+    },
+    enabled: !!selectedPortfolio,
+  });
+
   const handleExportCSV = () => {
     toast({
       title: 'Export Started',
@@ -79,11 +167,23 @@ const Dashboard = () => {
     setShowOrderPanel(false);
   };
 
-  const handleTickerSearch = (query: string) => {
-    return mockSearchResults.filter((r) =>
-      r.ticker.toLowerCase().includes(query.toLowerCase()) ||
-      r.name.toLowerCase().includes(query.toLowerCase())
-    );
+  const handleSignOut = async () => {
+    if (USE_MOCK_DATA) {
+      // In mock mode, just navigate to auth page
+      navigate('/auth');
+      return;
+    }
+    
+    try {
+      await supabase.auth.signOut();
+      navigate('/auth');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to sign out",
+        variant: "destructive"
+      });
+    }
   };
 
   if (!selectedPortfolio) {
@@ -103,9 +203,22 @@ const Dashboard = () => {
     );
   }
 
-  // Calculate KPIs
-  const dayChange = positions.reduce((sum, p) => sum + (p.market_value * p.day_change_percentage / 100), 0);
-  const dayChangePercent = (dayChange / selectedPortfolio.current_value) * 100;
+  // Calculate portfolio metrics
+  const portfolioMetrics = calculatePortfolioMetrics(selectedPortfolio, positions, mockOrders);
+  
+  // Calculate period P&L based on performance data
+  const calculatePeriodPnL = () => {
+    if (!performanceData || performanceData.length < 2) return { value: 0, percentage: 0 };
+    
+    const startValue = performanceData[0].value;
+    const endValue = performanceData[performanceData.length - 1].value;
+    const periodChange = endValue - startValue;
+    const periodChangePercent = startValue > 0 ? (periodChange / startValue) * 100 : 0;
+    
+    return { value: periodChange, percentage: periodChangePercent };
+  };
+  
+  const periodPnL = calculatePeriodPnL();
 
   const MobileNav = () => (
     <div className="flex flex-col h-full">
@@ -171,7 +284,8 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="flex h-screen bg-background">
+    <TooltipProvider>
+      <div className="flex h-screen bg-background">
       {/* Mobile Menu */}
       {isMobile && (
         <Sheet open={showMobileMenu} onOpenChange={setShowMobileMenu}>
@@ -212,6 +326,7 @@ const Dashboard = () => {
                 <span className="text-xl font-bold text-foreground">Oscillo</span>
               </div>
               
+              {/* Portfolio Selector - After logo */}
               <div className="hidden sm:block">
                 <PortfolioSwitcher
                   portfolios={portfolios}
@@ -225,22 +340,25 @@ const Dashboard = () => {
                   }}
                 />
               </div>
+              
+              {/* Period Selector - After portfolio selector */}
+              <div className="hidden md:block">
+                <Tabs value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as Period)}>
+                  <TabsList>
+                    <TabsTrigger value="1D">1D</TabsTrigger>
+                    <TabsTrigger value="1W">1W</TabsTrigger>
+                    <TabsTrigger value="1M">1M</TabsTrigger>
+                    <TabsTrigger value="YTD">YTD</TabsTrigger>
+                    <TabsTrigger value="1Y">1Y</TabsTrigger>
+                    <TabsTrigger value="ALL">ALL</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
             </div>
 
             <div className="flex items-center gap-2 md:gap-4">
-              <div className="hidden md:block">
-                <TickerSearch
-                  onSearch={handleTickerSearch}
-                  searchResults={mockSearchResults}
-                  quotes={mockQuotes}
-                  onSelect={(ticker) => {
-                    toast({
-                      title: 'Ticker Selected',
-                      description: `Viewing details for ${ticker}`,
-                    });
-                  }}
-                />
-              </div>
+              <CreatePortfolioDialog />
+              <CashDialog portfolioId={selectedPortfolio?.id} />
               
               <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex">
                 <Link to="/settings">
@@ -248,10 +366,13 @@ const Dashboard = () => {
                 </Link>
               </Button>
               
-              <Button variant="ghost" size="icon" asChild className="hidden md:inline-flex">
-                <Link to="/">
-                  <LogOut className="h-5 w-5" />
-                </Link>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleSignOut}
+                className="hidden md:inline-flex"
+              >
+                <LogOut className="h-5 w-5" />
               </Button>
             </div>
           </div>
@@ -273,19 +394,21 @@ const Dashboard = () => {
             </div>
           )}
 
-          {/* Period Selector */}
-          <div className="px-4 md:px-6 py-3 overflow-x-auto">
-            <Tabs value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as Period)}>
-              <TabsList className="w-full md:w-auto">
-                <TabsTrigger value="1D" className="flex-1 md:flex-none">1D</TabsTrigger>
-                <TabsTrigger value="1W" className="flex-1 md:flex-none">1W</TabsTrigger>
-                <TabsTrigger value="1M" className="flex-1 md:flex-none">1M</TabsTrigger>
-                <TabsTrigger value="YTD" className="flex-1 md:flex-none">YTD</TabsTrigger>
-                <TabsTrigger value="1Y" className="flex-1 md:flex-none">1Y</TabsTrigger>
-                <TabsTrigger value="ALL" className="flex-1 md:flex-none">ALL</TabsTrigger>
-              </TabsList>
-            </Tabs>
-          </div>
+          {/* Mobile Period Selector - Below Portfolio Switcher */}
+          {isMobile && (
+            <div className="px-4 py-2 border-b border-border">
+              <Tabs value={selectedPeriod} onValueChange={(v) => setSelectedPeriod(v as Period)}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="1D" className="flex-1">1D</TabsTrigger>
+                  <TabsTrigger value="1W" className="flex-1">1W</TabsTrigger>
+                  <TabsTrigger value="1M" className="flex-1">1M</TabsTrigger>
+                  <TabsTrigger value="YTD" className="flex-1">YTD</TabsTrigger>
+                  <TabsTrigger value="1Y" className="flex-1">1Y</TabsTrigger>
+                  <TabsTrigger value="ALL" className="flex-1">ALL</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          )}
         </header>
 
         {/* Dashboard Content */}
@@ -295,50 +418,79 @@ const Dashboard = () => {
             <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
               <KpiCard
                 title="Total Value"
-                value={selectedPortfolio.current_value}
+                value={portfolioMetrics.currentValue}
                 format="currency"
                 tooltip="Current market value of all holdings"
                 className="col-span-2 md:col-span-1"
               />
               <KpiCard
-                title="Day P&L"
-                value={dayChange}
-                change={dayChangePercent}
+                title={`${getPeriodLabel(selectedPeriod)} P&L`}
+                value={periodPnL.value}
+                change={periodPnL.percentage}
                 format="currency"
                 changeType="percent"
-                tooltip="Today's profit/loss"
+                tooltip={`Profit/loss for the selected ${getPeriodLabel(selectedPeriod).toLowerCase()} period`}
               />
               <KpiCard
                 title="Total P&L"
-                value={selectedPortfolio.total_pnl}
-                change={selectedPortfolio.total_pnl_percentage}
+                value={portfolioMetrics.totalPnl}
+                change={portfolioMetrics.totalPnlPercentage}
                 format="currency"
                 changeType="percent"
                 tooltip="All-time profit/loss"
               />
               <KpiCard
-                title="Return"
-                value={selectedPortfolio.total_pnl_percentage}
+                title="Total Return"
+                value={portfolioMetrics.totalPnlPercentage}
                 format="percent"
                 tooltip="Total return percentage"
-                className="col-span-2 md:col-span-1"
+                className={cn(
+                  "col-span-2 md:col-span-1",
+                  portfolioMetrics.totalPnlPercentage >= 0 ? 'border-success/20' : 'border-destructive/20'
+                )}
               />
             </div>
 
             {/* Charts */}
             <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
               <div className="lg:col-span-2">
-                <div className="rounded-lg border border-border bg-card p-4 md:p-6">
-                  <h3 className="mb-4 text-lg font-semibold text-foreground">Performance</h3>
-                  <PerformanceChart 
-                    data={performanceData} 
-                    period={selectedPeriod} 
-                    height={isMobile ? 250 : 400}
-                  />
+                <div className="rounded-lg border border-border bg-card p-4 md:p-6 h-full flex flex-col">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-2">
+                    <h3 className="text-lg font-semibold text-foreground">Performance</h3>
+                    <div className="flex gap-1 sm:gap-2">
+                      <Button
+                        variant={performanceViewMode === 'value' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setPerformanceViewMode('value')}
+                        className="text-xs sm:text-sm px-2 sm:px-3"
+                      >
+                        Value
+                      </Button>
+                      <Button
+                        variant={performanceViewMode === 'percentage' ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setPerformanceViewMode('percentage')}
+                        className="text-xs sm:text-sm px-2 sm:px-3"
+                      >
+                        %
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex-1 min-h-0">
+                    <PerformanceChart 
+                      data={performanceData} 
+                      period={selectedPeriod}
+                      height={isMobile ? 280 : 450}
+                      viewMode={performanceViewMode}
+                      onViewModeChange={setPerformanceViewMode}
+                    />
+                  </div>
                 </div>
               </div>
               <div className="lg:col-span-1">
-                <AllocationDonut positions={positions} height={isMobile ? 250 : 300} />
+                <div className="h-full">
+                  <AllocationDonut positions={positions} height={isMobile ? 250 : 400} />
+                </div>
               </div>
             </div>
 
@@ -347,6 +499,21 @@ const Dashboard = () => {
               <MobileHoldingsView positions={positions} />
             ) : (
               <HoldingsTable positions={positions} onExport={handleExportCSV} />
+            )}
+
+            {/* Orders Table */}
+            {isMobile ? (
+              <MobileOrdersView orders={orders} />
+            ) : (
+              <OrdersTable 
+                orders={orders} 
+                onExport={() => {
+                  toast({
+                    title: 'Export Started',
+                    description: 'Your orders data is being exported to CSV.',
+                  });
+                }} 
+              />
             )}
           </div>
         </ScrollArea>
@@ -360,17 +527,30 @@ const Dashboard = () => {
       )}
 
       {/* Floating Action Button */}
-      <Button
-        className={cn(
-          "fixed bottom-6 right-6 h-14 w-14 rounded-full shadow-lg z-30",
-          showOrderPanel && "hidden md:flex"
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            className={cn(
+              "fixed bottom-4 right-4 sm:bottom-6 sm:right-6 h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg z-50 bg-primary hover:bg-primary-hover transition-all"
+            )}
+            size="icon"
+            onClick={() => setShowOrderPanel(!showOrderPanel)}
+          >
+            {showOrderPanel ? (
+              <X className="h-5 w-5 sm:h-6 sm:w-6" />
+            ) : (
+              <Plus className="h-5 w-5 sm:h-6 sm:w-6" />
+            )}
+          </Button>
+        </TooltipTrigger>
+        {!showOrderPanel && (
+          <TooltipContent side="left" sideOffset={8}>
+            <p>Quick Order</p>
+          </TooltipContent>
         )}
-        size="icon"
-        onClick={() => setShowOrderPanel(true)}
-      >
-        <Plus className="h-6 w-6" />
-      </Button>
+      </Tooltip>
     </div>
+    </TooltipProvider>
   );
 };
 

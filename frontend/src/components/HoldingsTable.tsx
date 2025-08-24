@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowUpDown, Download, Eye, EyeOff } from 'lucide-react';
+import { ArrowUpDown, ArrowUp, ArrowDown, Download, Eye, EyeOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { formatCurrency, formatPercent, formatNumber } from '@/lib/format';
+import { formatCurrency, formatPercent, formatNumber, formatAllocation } from '@/lib/format';
 import type { Position } from '@/lib/api';
 
 interface HoldingsTableProps {
@@ -87,8 +87,8 @@ export const HoldingsTable = ({ positions, onExport }: HoldingsTableProps) => {
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card overflow-hidden">
-        <Table>
+      <div className="rounded-lg border border-border bg-card overflow-x-auto">
+        <Table className="min-w-[640px]">
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               {columns.map((column) => {
@@ -99,7 +99,7 @@ export const HoldingsTable = ({ positions, onExport }: HoldingsTableProps) => {
                   <TableHead
                     key={column.key}
                     className={cn(
-                      'font-medium',
+                      'font-medium whitespace-nowrap',
                       column.sortable && 'cursor-pointer select-none hover:bg-secondary/50'
                     )}
                     onClick={() => column.sortable && handleSort(column.key as SortKey)}
@@ -107,7 +107,15 @@ export const HoldingsTable = ({ positions, onExport }: HoldingsTableProps) => {
                     <div className="flex items-center gap-1">
                       {column.label}
                       {column.sortable && (
-                        <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+                        sortKey === column.key ? (
+                          sortOrder === 'asc' ? (
+                            <ArrowUp className="h-3 w-3 text-primary" />
+                          ) : (
+                            <ArrowDown className="h-3 w-3 text-primary" />
+                          )
+                        ) : (
+                          <ArrowUpDown className="h-3 w-3 text-muted-foreground opacity-50" />
+                        )
                       )}
                     </div>
                   </TableHead>
@@ -159,7 +167,7 @@ export const HoldingsTable = ({ positions, onExport }: HoldingsTableProps) => {
                   {formatPercent(position.day_change_percentage)}
                 </TableCell>
                 {!hiddenColumns.has('weight') && (
-                  <TableCell>{formatPercent(position.weight)}</TableCell>
+                  <TableCell>{formatAllocation(position.weight)}</TableCell>
                 )}
               </TableRow>
             ))}

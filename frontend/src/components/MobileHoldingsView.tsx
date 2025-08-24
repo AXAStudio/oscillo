@@ -1,7 +1,7 @@
 import { TrendingUp, TrendingDown } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { formatCurrency, formatPercent } from '@/lib/format';
+import { formatCurrency, formatPercent, formatAllocation } from '@/lib/format';
 import type { Position } from '@/lib/api';
 
 interface MobileHoldingsViewProps {
@@ -46,7 +46,7 @@ export const MobileHoldingsView = ({ positions }: MobileHoldingsViewProps) => {
                   {formatCurrency(position.market_value)}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {formatPercent(position.weight)} of portfolio
+                  {formatAllocation(position.weight)} of portfolio
                 </p>
               </div>
             </div>

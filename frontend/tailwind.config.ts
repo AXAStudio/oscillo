@@ -18,6 +18,9 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				'space-grotesk': ['Space Grotesk', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -64,11 +67,23 @@ export default {
 					foreground: 'hsl(var(--card-foreground))',
 					hover: 'hsl(var(--card-hover))'
 				},
+				profit: {
+					DEFAULT: 'hsl(var(--profit))',
+					hover: 'hsl(var(--profit-hover))',
+					foreground: 'hsl(var(--profit-foreground))'
+				},
+				loss: {
+					DEFAULT: 'hsl(var(--loss))',
+					hover: 'hsl(var(--loss-hover))',
+					foreground: 'hsl(var(--loss-foreground))'
+				},
 				chart: {
 					primary: 'hsl(var(--chart-primary))',
 					secondary: 'hsl(var(--chart-secondary))',
 					tertiary: 'hsl(var(--chart-tertiary))',
 					quaternary: 'hsl(var(--chart-quaternary))',
+					profit: 'hsl(var(--chart-profit))',
+					loss: 'hsl(var(--chart-loss))',
 					grid: 'hsl(var(--chart-grid))'
 				},
 				sidebar: {

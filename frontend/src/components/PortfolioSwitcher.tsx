@@ -66,16 +66,18 @@ export const PortfolioSwitcher = ({
             role="combobox"
             aria-expanded={open}
             aria-label="Select portfolio"
-            className="w-full sm:w-[240px] justify-between"
+            className="w-full sm:w-[240px] justify-between text-xs sm:text-sm"
           >
-            <div className="flex items-center gap-2">
-              <Briefcase className="h-4 w-4" />
-              {selectedPortfolio ? selectedPortfolio.name : 'Select portfolio...'}
+            <div className="flex items-center gap-1.5 sm:gap-2 truncate">
+              <Briefcase className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0" />
+              <span className="truncate">
+                {selectedPortfolio ? selectedPortfolio.name : 'Select portfolio...'}
+              </span>
             </div>
-            <ChevronsUpDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+            <ChevronsUpDown className="ml-auto h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-[260px] sm:w-[240px] p-0">
+        <PopoverContent className="w-[280px] sm:w-[240px] p-0">
           <Command>
             <CommandInput placeholder="Search portfolio..." />
             <CommandList>
@@ -92,7 +94,7 @@ export const PortfolioSwitcher = ({
                   >
                     <Check
                       className={cn(
-                        'mr-2 h-4 w-4',
+                        'mr-2 h-4 w-4 text-primary',
                         selectedPortfolio?.id === portfolio.id
                           ? 'opacity-100'
                           : 'opacity-0'
@@ -101,29 +103,12 @@ export const PortfolioSwitcher = ({
                     <div className="flex-1">
                       <div className="font-medium">{portfolio.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {formatCurrency(portfolio.current_value)}
+                        {formatCurrency(portfolio.present_value || 0)}
                       </div>
                     </div>
                   </CommandItem>
                 ))}
               </CommandGroup>
-              {onCreate && (
-                <>
-                  <CommandSeparator />
-                  <CommandGroup>
-                    <DialogTrigger asChild>
-                      <CommandItem
-                        onSelect={() => {
-                          setOpen(false);
-                        }}
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Create portfolio
-                      </CommandItem>
-                    </DialogTrigger>
-                  </CommandGroup>
-                </>
-              )}
             </CommandList>
           </Command>
         </PopoverContent>

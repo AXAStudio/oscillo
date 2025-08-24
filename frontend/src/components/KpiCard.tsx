@@ -41,18 +41,18 @@ export const KpiCard = ({
   return (
     <div
       className={cn(
-        'relative bg-card border border-border rounded-lg p-4 sm:p-6 transition-all hover:bg-card-hover hover:shadow-lg',
+        'relative bg-card border border-border rounded-lg p-3 sm:p-4 md:p-6 transition-all hover:bg-card-hover hover:shadow-lg overflow-hidden',
         className
       )}
     >
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-xs sm:text-sm font-medium text-muted-foreground">
+      <div className="flex items-start justify-between mb-2">
+        <span className="text-xs sm:text-sm font-medium text-muted-foreground truncate flex-1">
           {title}
         </span>
         {tooltip && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <InfoIcon className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground hover:text-foreground transition-colors cursor-help" />
+              <InfoIcon className="h-3 w-3 sm:h-4 sm:w-4 text-muted-foreground hover:text-foreground transition-colors cursor-help flex-shrink-0 ml-1" />
             </TooltipTrigger>
             <TooltipContent>
               <p className="max-w-xs">{tooltip}</p>
@@ -61,8 +61,8 @@ export const KpiCard = ({
         )}
       </div>
       
-      <div className="flex items-end justify-between">
-        <div className="text-xl sm:text-2xl font-bold text-foreground">
+      <div className="space-y-1">
+        <div className="text-lg sm:text-xl md:text-2xl font-bold text-foreground truncate">
           {formattedValue}
         </div>
         
@@ -75,9 +75,9 @@ export const KpiCard = ({
               !isPositive && !isNegative && 'text-muted-foreground'
             )}
           >
-            {isPositive && <ArrowUpIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />}
-            {isNegative && <ArrowDownIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3" />}
-            <span className="whitespace-nowrap">
+            {isPositive && <ArrowUpIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0" />}
+            {isNegative && <ArrowDownIcon className="h-2.5 w-2.5 sm:h-3 sm:w-3 flex-shrink-0" />}
+            <span className="truncate">
               {changeType === 'currency'
                 ? formatCurrency(Math.abs(change))
                 : formatPercent(Math.abs(change))}

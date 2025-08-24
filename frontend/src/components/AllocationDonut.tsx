@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { Button } from '@/components/ui/button';
-import { formatCurrency, formatPercent } from '@/lib/format';
+import { formatCurrency, formatAllocation } from '@/lib/format';
 import type { Position } from '@/lib/api';
 
 interface AllocationDonutProps {
@@ -51,13 +51,13 @@ export const AllocationDonut = ({ positions, height = 300 }: AllocationDonutProp
     if (active && payload && payload[0]) {
       const data = payload[0];
       return (
-        <div className="bg-popover border border-border rounded-lg p-3 shadow-lg">
-          <p className="font-medium text-foreground">{data.name}</p>
+        <div className="bg-popover border border-border rounded-lg p-3 shadow-lg font-space-grotesk">
+          <p className="font-semibold text-foreground">{data.name}</p>
           <p className="text-sm text-muted-foreground">
             {formatCurrency(data.value)}
           </p>
-          <p className="text-sm font-medium text-primary">
-            {formatPercent(data.payload.percentage)}
+          <p className="text-sm font-semibold text-primary">
+            {formatAllocation(data.payload.percentage)}
           </p>
         </div>
       );
@@ -66,45 +66,48 @@ export const AllocationDonut = ({ positions, height = 300 }: AllocationDonutProp
   };
 
   const renderLabel = (entry: any) => {
-    if (entry.percentage < 5) return null;
-    return `${entry.name} ${formatPercent(entry.percentage)}`;
+    if (viewMode !== 'asset' || entry.percentage < 5) return null;
+    return entry.name;
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-foreground">Allocation</h3>
-        <div className="flex gap-2">
+    <div className="rounded-lg border border-border bg-card h-full">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-border p-3 sm:p-4 gap-2">
+        <h3 className="text-base sm:text-lg font-semibold text-foreground">Allocation</h3>
+        <div className="flex gap-1 sm:gap-2 w-full sm:w-auto">
           <Button
             variant={viewMode === 'asset' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setViewMode('asset')}
+            className="text-xs sm:text-sm px-2 sm:px-3 flex-1 sm:flex-initial"
           >
-            By Asset
+            Assets
           </Button>
           <Button
             variant={viewMode === 'sector' ? 'default' : 'outline'}
             size="sm"
             onClick={() => setViewMode('sector')}
+            className="text-xs sm:text-sm px-2 sm:px-3 flex-1 sm:flex-initial"
           >
-            By Sector
+            Sectors
           </Button>
         </div>
       </div>
 
-      <div className="rounded-lg border border-border bg-card p-4">
+      <div className="p-3 sm:p-4">
         <ResponsiveContainer width="100%" height={height}>
-          <PieChart>
+          <PieChart className="font-space-grotesk">
             <Pie
               data={data}
               cx="50%"
               cy="50%"
-              innerRadius={60}
-              outerRadius={100}
+              innerRadius={height > 250 ? 60 : 40}
+              outerRadius={height > 250 ? 100 : 70}
               paddingAngle={2}
               dataKey="value"
               label={renderLabel}
               labelLine={false}
+              className="font-space-grotesk font-semibold"
             >
               {data.map((entry, index) => (
                 <Cell
@@ -118,15 +121,15 @@ export const AllocationDonut = ({ positions, height = 300 }: AllocationDonutProp
           </PieChart>
         </ResponsiveContainer>
 
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-3 sm:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
           {data.slice(0, 6).map((item, index) => (
             <div key={item.name} className="flex items-center gap-2">
               <div
-                className="h-3 w-3 rounded-full"
+                className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full flex-shrink-0"
                 style={{ backgroundColor: COLORS[index % COLORS.length] }}
               />
-              <span className="text-xs text-muted-foreground truncate">
-                {item.name}: {formatPercent(item.percentage)}
+              <span className="text-xs text-muted-foreground truncate font-space-grotesk font-medium">
+                {item.name}: {formatAllocation(item.percentage)}
               </span>
             </div>
           ))}

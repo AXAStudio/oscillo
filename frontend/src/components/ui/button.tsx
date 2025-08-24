@@ -17,7 +17,7 @@ const buttonVariants = cva(
         link: "text-primary underline-offset-4 hover:underline",
         success: "bg-success text-success-foreground shadow-sm hover:bg-success/90",
         warning: "bg-warning text-warning-foreground shadow-sm hover:bg-warning/90",
-        glass: "border border-border/50 bg-card/30 backdrop-blur-sm hover:bg-card/50",
+        glass: "border border-border bg-card/90 backdrop-blur-sm hover:bg-card hover:border-primary/30 text-foreground",
       },
       size: {
         default: "h-9 px-4 py-2",

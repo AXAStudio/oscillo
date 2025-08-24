@@ -1,5 +1,9 @@
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Download, Trash2, User, Shield, Bell } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { User } from '@supabase/supabase-js';
+import { USE_MOCK_DATA } from '@/App';
+import { ArrowLeft, Download, User as UserIcon, Shield, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -7,22 +11,43 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import DeleteAccountDialog from '@/components/DeleteAccountDialog';
 
 const Settings = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    if (USE_MOCK_DATA) {
+      // In mock mode, use a fake user
+      setUser({ email: 'dev@example.com' } as User);
+      return;
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        navigate('/auth');
+      } else {
+        setUser(session.user);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT' || !session) {
+        navigate('/auth');
+      } else if (session) {
+        setUser(session.user);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
 
   const handleExportData = () => {
     toast({
       title: 'Export Started',
       description: 'Your data is being exported. Download will start shortly.',
-    });
-  };
-
-  const handleDeletePortfolio = () => {
-    toast({
-      title: 'Confirmation Required',
-      description: 'Please confirm deletion in the dialog.',
-      variant: 'destructive',
     });
   };
 
@@ -46,7 +71,7 @@ const Settings = () => {
         <Card className="p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-6">
             <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <User className="h-5 w-5 text-primary" />
+              <UserIcon className="h-5 w-5 text-primary" />
             </div>
             <div>
               <h2 className="text-base sm:text-lg font-semibold text-foreground">Profile</h2>
@@ -56,14 +81,18 @@ const Settings = () => {
 
           <div className="space-y-4">
             <div className="grid gap-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" placeholder="John Doe" className="bg-card" />
-            </div>
-            <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="john@example.com" className="bg-card" />
+              <Input 
+                id="email" 
+                type="email" 
+                value={user?.email || ''} 
+                className="bg-card" 
+                disabled
+              />
             </div>
-            <Button>Save Changes</Button>
+            <p className="text-sm text-muted-foreground">
+              Email cannot be changed. Contact support for assistance.
+            </p>
           </div>
         </Card>
 
@@ -80,14 +109,6 @@ const Settings = () => {
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium text-foreground">Price Alerts</p>
-                <p className="text-sm text-muted-foreground">Get notified when prices hit targets</p>
-              </div>
-              <Switch />
-            </div>
-            <Separator />
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-medium text-foreground">Daily Summary</p>
@@ -129,31 +150,15 @@ const Settings = () => {
                 Export All Data
               </Button>
             </div>
-          </div>
-        </Card>
-
-        {/* Danger Zone */}
-        <Card className="border-destructive/50 p-4 sm:p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center">
-              <Trash2 className="h-5 w-5 text-destructive" />
-            </div>
+            
+            <Separator />
+            
             <div>
-              <h2 className="text-base sm:text-lg font-semibold text-foreground">Danger Zone</h2>
-              <p className="text-sm text-muted-foreground">Irreversible actions</p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <h3 className="font-medium text-foreground mb-2">Delete Portfolio</h3>
+              <h3 className="font-medium text-foreground mb-2">Delete Account</h3>
               <p className="text-sm text-muted-foreground mb-4">
-                Permanently delete your portfolio and all associated data. This action cannot be undone.
+                Permanently delete your account and all associated data. This action cannot be undone.
               </p>
-              <Button variant="destructive" onClick={handleDeletePortfolio}>
-                <Trash2 className="mr-2 h-4 w-4" />
-                Delete Portfolio
-              </Button>
+              <DeleteAccountDialog />
             </div>
           </div>
         </Card>
