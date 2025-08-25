@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DollarSign, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface CashDialogProps {
   portfolioId?: string;
@@ -15,6 +15,7 @@ interface CashDialogProps {
 }
 
 const CashDialog = ({ portfolioId, onTransactionComplete }: CashDialogProps) => {
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
@@ -93,7 +94,22 @@ const CashDialog = ({ portfolioId, onTransactionComplete }: CashDialogProps) => 
 
       if (positionError) throw positionError;
 
-      toast({
+      // Re-fetch the same data the dashboard relies on
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["orders", portfolioId] }),
+        queryClient.invalidateQueries({ queryKey: ["positions", portfolioId] }),
+        queryClient.invalidateQueries({ queryKey: ["cash-position", portfolioId] }),
+        queryClient.invalidateQueries({ queryKey: ["portfolios"] }),
+        // Optional: performance for this portfolio (covers any period keys)
+        queryClient.invalidateQueries({
+          predicate: (q) =>
+            Array.isArray(q.queryKey) &&
+            q.queryKey[0] === "performance" &&
+            q.queryKey[1] === portfolioId,
+        }),
+      ]);
+
+     toast({
         title: "Success",
         description: `Successfully ${type === "deposit" ? "deposited" : "withdrew"} $${transactionAmount.toFixed(2)}`
       });

@@ -1,10 +1,8 @@
 Bugs (difficulty rating 1-3)
-- Performance doesn’t return data given a period (3)
-- Values in Portfolio selector are auto set to 0 (1)
-- Upon any form submit the dashboard should reload (already does it on order submission but should also do it on cash submission and portfolio creation/deletion) (2)
-- “All” view on dashboard does not work (2)
-- P&L (both value and percent) doesn't show properly for holdings table (3)
-- total value doesn't include cash
+- Performance return improvement:
+- - kpi cards are wrong (specifically last 3)
+- - Performance doesn’t return data given a period (3)
+- - P&L (both value and percent) doesn't show properly for holdings table (3)
 
 Features not implemented yet
 - notifications (weekly LLM summary, order confirmations) (3)

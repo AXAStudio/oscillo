@@ -57,8 +57,8 @@ export const HoldingsTable = ({ positions, onExport }: HoldingsTableProps) => {
     { key: 'avg_cost', label: 'Avg Cost', sortable: true, hideable: true },
     { key: 'current_price', label: 'Price', sortable: true },
     { key: 'market_value', label: 'Market Value', sortable: true },
-    { key: 'pnl', label: 'P&L $', sortable: true },
-    { key: 'pnl_percentage', label: 'P&L %', sortable: true },
+    { key: 'pnl', label: 'All-Time P&L $', sortable: true },
+    { key: 'pnl_percentage', label: 'All-Time P&L %', sortable: true },
     { key: 'day_change_percentage', label: 'Day %', sortable: true },
     { key: 'weight', label: 'Weight', sortable: true, hideable: true },
   ] as const;

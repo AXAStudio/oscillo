@@ -326,6 +326,61 @@ const Dashboard = () => {
     dlog('orders query state:', { ordersStatus, ordersLoading, ordersFetching, error: !!ordersError, len: orders.length });
   }, [ordersStatus, ordersLoading, ordersFetching, ordersError, orders]);
 
+  // All orders (unfiltered) for avg-cost derivation
+  const { data: ordersAll = [], status: ordersAllStatus } = useQuery({
+    queryKey: ['orders', selectedPortfolioId, 'ALL'],
+    queryFn: async () => {
+      dlog('ordersAll queryFn:', { selectedPortfolioId });
+      if (!selectedPortfolioId) return [];
+      if (USE_MOCK_DATA) return mockOrders.filter(o => o.portfolio_id === selectedPortfolioId);
+      const response = await api.orders.list(selectedPortfolioId);
+      return transformOrders(response);
+    },
+    enabled: !!selectedPortfolioId,
+  });
+  useEffect(() => { dlog('ordersAll query state:', { ordersAllStatus, len: ordersAll.length }); }, [ordersAllStatus, ordersAll]);
+
+  // Derive average cost per ticker from full order history and overlay into positions
+  const positionsForUI = useMemo(() => {
+    if (!positions?.length) return positions;
+    // sort orders by time ascending to apply buys/sells in sequence
+    const timeline = [...(ordersAll ?? [])]
+      .filter(o => o.ticker && o.ticker !== 'CA$H')
+      .sort((a: any, b: any) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+    // running state per ticker
+    const state = new Map<string, { shares: number; cost: number }>();
+    for (const o of timeline) {
+      const t = o.ticker as string;
+      const q = Number(o.quantity || 0); // signed: buy>0, sell<0
+      const p = Number(o.price || 0);
+      const s = state.get(t) ?? { shares: 0, cost: 0 };
+      if (q > 0) {
+        s.shares += q;
+        s.cost += q * p;
+      } else if (q < 0) {
+        // remove shares at current average cost
+        const sell = Math.min(-q, s.shares);
+        const avg = s.shares > 0 ? s.cost / s.shares : 0;
+        s.shares -= sell;
+        s.cost -= sell * avg;
+      }
+      state.set(t, s);
+    }
+
+    const patched = positions.map((pos: any) => {
+      const s = state.get(pos.ticker);
+      const derivedAvg = s && s.shares > 0 ? s.cost / s.shares : undefined;
+      const avg_cost =
+        typeof pos.avg_cost === 'number' && pos.avg_cost > 0
+          ? pos.avg_cost
+          : (derivedAvg ?? pos.avg_cost ?? 0);
+      return { ...pos, avg_cost };
+    });
+    dlog('[positions avg-cost overlay] sample:', patched.slice(0, 3).map((p: any) => ({ t: p.ticker, avg: p.avg_cost })));
+    return patched;
+  }, [positions, ordersAll]);
+
   const handleOrderSubmit = async (order: any) => {
     dlog('handleOrderSubmit:', order);
     if (!selectedPortfolioId) return;
@@ -664,7 +719,7 @@ const Dashboard = () => {
               {/* KPI Cards */}
               <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
                 <KpiCard
-                  title="Total Value"
+                  title="Portfolio Market Value (not incl. cash)"
                   value={portfolioMetrics.currentValue}
                   format="currency"
                   tooltip="Current market value of all holdings"
@@ -743,9 +798,9 @@ const Dashboard = () => {
 
               {/* Holdings Table */}
               {isMobileView ? (
-                <MobileHoldingsView positions={positions} />
+                <MobileHoldingsView positions={positionsForUI} />
               ) : (
-                <HoldingsTable positions={positions} onExport={() => {
+                <HoldingsTable positions={positionsForUI} onExport={() => {
                   dlog('Holdings export clicked');
                   toast({ title: 'Export Started', description: 'Your holdings data is being exported to CSV.' });
                 }} />

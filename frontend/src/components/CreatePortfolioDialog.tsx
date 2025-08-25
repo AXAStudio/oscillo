@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ interface CreatePortfolioDialogProps {
 }
 
 const CreatePortfolioDialog = ({ onPortfolioCreated, trigger }: CreatePortfolioDialogProps) => {
+  const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,12 +42,23 @@ const CreatePortfolioDialog = ({ onPortfolioCreated, trigger }: CreatePortfolioD
         return;
       }
 
-      const { error } = await supabase.from("portfolios").insert({
-        name: name.trim(),
-        user_id: session.session.user.id
-      });
+      const { data: created, error } = await supabase
+        .from("portfolios")
+        .insert({
+          name: name.trim(),
+          user_id: session.session.user.id
+        })
+        .select()
+        .single();
 
       if (error) throw error;
+
+      // Re-fetch lists and any views that depend on portfolios
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["portfolios"] }),
+        // If your UI shows performance for the newly created portfolio immediately,
+        // you can also pre-invalidate its keys here once you use `created?.id`.
+      ]);
 
       toast({
         title: "Success",
