@@ -34,27 +34,45 @@ def clean_orders_df(raw: Any) -> pd.DataFrame:
 
 def clean_prices_df(prices_dict: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     """
-    Build wide price DataFrame (index=Datetime, cols=tickers, values=Close).
-    Accepts dict[ticker] -> df with ['Datetime','Open','Close'].
+    Build wide price DataFrame (index=Datetime[UTC], cols=tickers, values=Close).
+    Accepts dict[ticker] -> df with either an index or a column named 'Datetime'/'Date'.
     Preserves sub-daily resolution (minute, hourly, etc.).
     """
     frames = []
     for tkr, df in (prices_dict or {}).items():
-        if df is None or len(df) == 0:
+        if df is None or df.empty:
             continue
-        local = df.copy().reset_index()
-        date_col = "Datetime" if "Datetime" in local.columns else "Date"
-        # keep full timestamp resolution
-        idx = pd.to_datetime(local[date_col], utc=True, errors="coerce").dt.tz_localize(None)
-        s = pd.Series(local["Close"].astype(float).values, index=idx, name=str(tkr).upper())
-        # only collapse if true duplicates exist at the *same exact timestamp*
+
+        local = df.copy()
+
+        # Find timestamp series: prefer index if it's datetime-like, else a column.
+        if isinstance(local.index, pd.DatetimeIndex):
+            ts = local.index
+        else:
+            col = "Datetime" if "Datetime" in local.columns else "Date"
+            ts = pd.to_datetime(local[col], errors="coerce")
+
+        # Ensure tz-aware UTC index
+        if ts.tz is None:
+            ts = pd.to_datetime(ts, utc=True, errors="coerce")      # localize to UTC
+        else:
+            ts = ts.tz_convert("UTC")                               # convert to UTC
+
+        # Build a Series of Close (or Adj Close if Close missing)
+        close_col = "Close" if "Close" in local.columns else "Adj Close"
+        s = pd.Series(pd.to_numeric(local[close_col], errors="coerce"), index=ts, name=str(tkr).upper())
+
+        # Drop missing timestamps/values and de-duplicate exact-timestamp rows
+        s = s.dropna()
         s = s.groupby(level=0).last()
+
         frames.append(s)
 
     if not frames:
         return pd.DataFrame()
 
     px = pd.concat(frames, axis=1).sort_index()
+    px.index.name = "Datetime"   # nice to have
     return px
 
 
