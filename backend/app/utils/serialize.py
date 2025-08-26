@@ -4,9 +4,11 @@ import numpy as np
 import pandas as pd
 from typing import Any, Dict
 
-def _iso(idx: pd.DatetimeIndex) -> list[str]:
-    idx = pd.to_datetime(idx, utc=True, errors="coerce")
-    return idx.strftime("%Y-%m-%dT%H:%M:%SZ").tolist()
+def _iso(idx: pd.DatetimeIndex, tz: str = "America/New_York") -> list[str]:
+    idx = pd.to_datetime(idx, utc=True, errors="coerce").tz_convert(tz)
+    out = idx.strftime("%Y-%m-%dT%H:%M:%S%z").tolist()
+    return [s[:-2] + ":" + s[-2:] if len(s) >= 5 else s for s in out]
+
 
 def serialize_performance_legacy(perf: Dict[str, Any]) -> Dict[str, Any]:
     """
