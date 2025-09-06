@@ -1,0 +1,9 @@
+{
+  "period": "ALL",
+  "backend_granularity": "ALL",
+  "window_start_utc": "2025-08-12T00:00:00.000000Z",
+  "window_end_utc": "2025-09-05T00:00:00.000000Z",
+  "n_points": 18,
+  "first_value": 10094.26000366211,
+  "last_value": 11400.360096130371
+}

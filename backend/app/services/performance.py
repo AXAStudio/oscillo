@@ -8,6 +8,7 @@ import pandas as pd
 from typing import Dict, Tuple
 from supabase import create_client
 from datetime import datetime, timezone
+from pandas.tseries.offsets import DateOffset
 
 from app.configs import config
 from app.models import Order, Portfolio
@@ -20,7 +21,6 @@ from app.utils.performance import (
     clean_prices_df,
     nearest_yf_period
 )
-
 
 
 _logger = setup_logger()
@@ -91,15 +91,49 @@ def _parse_granularity(granularity: str) -> Tuple[str, str]:
     return mapping[g]
 
 
+
+NY = "America/New_York"
+
+def compute_window(granularity: str, now_utc: pd.Timestamp | None = None) -> Tuple[pd.Timestamp, pd.Timestamp]:
+    """
+    Return (start_utc, end_utc) for the requested granularity.
+    """
+    if now_utc is None:
+        now_utc = pd.Timestamp.utcnow().tz_localize("UTC")
+
+    now_ny = now_utc.tz_convert(NY)
+    end_utc = now_utc
+    g = granularity.upper().strip()
+
+    if g == "1D":
+        # same-calendar-day regular session (09:30–16:00 NY), minus 1 minute to align with minute bars
+        day = now_ny.date()
+        start_ny = pd.Timestamp(day, tz=NY) + pd.Timedelta(hours=9, minutes=30)
+        end_ny   = pd.Timestamp(day, tz=NY) + pd.Timedelta(hours=16) - pd.Timedelta(minutes=1)
+        return start_ny.tz_convert("UTC"), end_ny.tz_convert("UTC")
+
+    if g == "1W":
+        return (now_utc - pd.Timedelta(days=7), end_utc)
+
+    if g == "1M":
+        return (now_utc - DateOffset(months=1), end_utc)
+
+    if g == "YTD":
+        ytd_start_ny = pd.Timestamp(year=now_ny.year, month=1, day=1, tz=NY)
+        return (ytd_start_ny.tz_convert("UTC"), end_utc)
+
+    if g in ("1Y", "1YR"):
+        return (now_utc - DateOffset(years=1), end_utc)
+
+    # ALL: let caller widen to earliest seen data/first order
+    return (pd.Timestamp("1970-01-01", tz="UTC"), end_utc)
+
+
 async def get_portfolio_data(
     user_id: str,
     portfolio_id: str,
     granularity: str = "ALL"
 ):
-    """
-    Fetch orders and prices using an effective (period, interval) that’s valid for Yahoo,
-    and return consistent metadata that reflects what was actually fetched.
-    """
     # ---- Validate IDs ----
     user_id_str = _ensure_uuid_str(user_id, "user_id")
     portfolio_id_str = _ensure_uuid_str(portfolio_id, "portfolio_id")
@@ -120,9 +154,9 @@ async def get_portfolio_data(
     start_dt = parse_timestamptz(portfolio.created_at)  # tz-aware
     tzinfo = start_dt.tzinfo or timezone.utc
     now_dt = datetime.now(tzinfo)
+    now_utc = pd.Timestamp(now_dt).tz_convert("UTC")
 
     # ---- Orders ----
-    # Swap this to your real fetch when ready:
     # raw_orders = await get_all_orders(portfolio_id_str)
     from test_data import ORDERS as raw_orders
     orders = clean_orders_df(raw_orders).copy()
@@ -152,14 +186,122 @@ async def get_portfolio_data(
             interval=effective_interval,
         )
 
-    price_df = clean_prices_df(prices_raw).copy()
+    price_df = clean_prices_df(prices_raw).copy()  # may be wide; index must be tz-aware UTC
 
-    _logger.info(len(price_df))
+    # ==== NORMALIZE BEFORE ANY LOGGING/SLICE ====
+    if not price_df.empty:
+        if price_df.index.tz is None:
+            price_df.index = price_df.index.tz_localize("UTC")
+        else:
+            price_df.index = price_df.index.tz_convert("UTC")
+        price_df = price_df[~price_df.index.duplicated(keep="last")].sort_index()
 
-    _logger.info({"start_dt": start_dt, "rows": len(price_df)})
+    # ---- Coverage print (pre-slice) ----
+    pre_min = None if price_df.empty else str(price_df.index.min())
+    pre_max = None if price_df.empty else str(price_df.index.max())
+    unique_ny_days = (
+        0 if price_df.empty
+        else pd.Index(price_df.index.tz_convert(NY).date).nunique()
+    )
+    print({
+        "effective": (effective_period, effective_interval),
+        "pre_slice_min": pre_min,
+        "pre_slice_max": pre_max,
+        "pre_slice_unique_days_ny": unique_ny_days,
+        "pre_slice_rows": int(len(price_df)),
+    })
 
+    # ---- Apply time window slice (CRITICAL) ----
+    win_start_utc, win_end_utc = compute_window(granularity, now_utc=now_utc)
+
+    # ---- Clamp window start to inception (first order), with daily edge fix ----
+    earliest_orders = orders["timestamp"].min() if not orders.empty else None
+    if earliest_orders is not None:
+        # Ensure tz-aware UTC
+        eo_utc = (earliest_orders.tz_convert("UTC")
+                if getattr(earliest_orders, "tzinfo", None)
+                else pd.Timestamp(earliest_orders, tz="UTC"))
+
+        daily_like = effective_interval in {"1d", "1wk", "1mo"}
+
+        if eo_utc > win_start_utc:
+            if daily_like:
+                eo_day = eo_utc.normalize()  # midnight UTC of that day (yfinance daily bar)
+                # If our start is before that day, start AT that day.
+                win_start_utc = max(win_start_utc, eo_day)
+
+                # If we’re starting ON the same day as the first order,
+                # bump to the next day so positions exist at first bar.
+                if win_start_utc == eo_day:
+                    win_start_utc = eo_day + pd.Timedelta(days=1)
+            else:
+                # Intraday: can start exactly at the first order timestamp
+                win_start_utc = max(win_start_utc, eo_utc)
+
+
+
+    # For ALL, widen to earliest data or order
+    # ---- ALL: start at inception (first order), else earliest price ----
+    if granularity.upper() == "ALL":
+        earliest_prices = price_df.index.min() if not price_df.empty else None
+
+        if not orders.empty:
+            # eo_utc already computed above (tz-aware UTC)
+            if effective_interval in {"1d", "1wk", "1mo"}:
+                eo_day = eo_utc.normalize()
+                # start the day AFTER the first order so positions exist at the first bar
+                win_start_utc = eo_day + pd.Timedelta(days=1)
+
+                # optional: if you prefer to align to the next available timestamp in the data:
+                # if not price_df.empty:
+                #     next_idx = price_df.index[price_df.index > eo_day]
+                #     if len(next_idx) > 0:
+                #         win_start_utc = next_idx[0]
+            else:
+                # intraday can start exactly at the first order timestamp
+                win_start_utc = eo_utc
+        elif earliest_prices is not None:
+            win_start_utc = (earliest_prices.tz_convert("UTC")
+                            if getattr(earliest_prices, "tzinfo", None)
+                            else pd.Timestamp(earliest_prices, tz="UTC"))
+    # else keep computed window
+
+
+    if granularity.upper() == "1D" and not price_df.empty:
+        last_day_ny = price_df.index.tz_convert(NY).date.max()
+        today_ny = now_utc.tz_convert(NY).date()
+        if last_day_ny != today_ny:
+            s_ny = pd.Timestamp(last_day_ny, tz=NY) + pd.Timedelta(hours=9, minutes=30)
+            e_ny = pd.Timestamp(last_day_ny, tz=NY) + pd.Timedelta(hours=16) - pd.Timedelta(minutes=1)
+            win_start_utc, win_end_utc = s_ny.tz_convert("UTC"), e_ny.tz_convert("UTC")
+
+    # ---- Authoritative slice ----
+    if not price_df.empty:
+        price_df = price_df.loc[(price_df.index >= win_start_utc) & (price_df.index <= win_end_utc)]
+
+        # (Optional) FFILL per ticker for a wide MultiIndex to avoid NaNs at the first bar
+        try:
+            if isinstance(price_df.columns, pd.MultiIndex):
+                # forward-fill within each ticker group
+                price_df = (price_df.sort_index()
+                            .groupby(level=0, axis=1, sort=False)
+                            .apply(lambda g: g.ffill()))
+            else:
+                price_df = price_df.ffill()
+            price_df = price_df.dropna(how="all")
+        except Exception:
+            # keep going even if ffill grouping isn't needed
+            pass
+
+    _logger.info({"window": (str(win_start_utc), str(win_end_utc)),
+                  "rows_after_window": len(price_df)})
+
+    # ---- Compute performance ----
     return {
-        "performance": portfolio.get_performance(orders, price_df),
+        "performance": portfolio.get_performance(
+            orders_df=orders,     # full history (do NOT window orders)
+            prices_df=price_df,   # normalized, clamped, sliced
+        ),
     }
 
 

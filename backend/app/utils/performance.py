@@ -76,31 +76,29 @@ def clean_prices_df(prices_dict: Dict[str, pd.DataFrame]) -> pd.DataFrame:
     return px
 
 
-def nearest_yf_period(
-    start_date: datetime, 
-    end_date: datetime
-) -> pd.DatetimeIndex:
+def nearest_yf_period(start_date: datetime, end_date: datetime) -> str:
     """
-    Get the nearest yfinance period for the given date range.
+    Return the yfinance-compatible period string that best fits (end - start).
+    One of: {"1d","5d","1mo","3mo","6mo","1y","2y","5y","10y","ytd","max"}.
     """
-    # Define the periods we support
-    periods = {
-        "1d": pd.Timedelta(days=1),
-        "5d": pd.Timedelta(days=5),
-        "1mo": pd.Timedelta(days=30),
-        "3mo": pd.Timedelta(days=90),
-        "6mo": pd.Timedelta(days=180),
-        "1y": pd.Timedelta(days=365),
-        "2y": pd.Timedelta(days=730),
-        "5y": pd.Timedelta(days=1825),
-        "10y": pd.Timedelta(days=3650),
-        "ytd": pd.Timestamp.now() - pd.Timestamp(datetime(start_date.year, 1, 1)),
-        "max": None  # No limit
-    }
+    span = end_date - start_date
+    # Use end_date's year for YTD anchor
+    ytd_delta = end_date - datetime(end_date.year, 1, 1)
 
-    # Find the closest period that fits the date range
-    for period, delta in periods.items():
-        if delta is None or (end_date - start_date) <= delta:
-            return period
-
-    return "max"  # Fallback to max if no other period fits
+    candidates = [
+        ("1d",  pd.Timedelta(days=1)),
+        ("5d",  pd.Timedelta(days=5)),
+        ("1mo", pd.Timedelta(days=30)),
+        ("3mo", pd.Timedelta(days=90)),
+        ("6mo", pd.Timedelta(days=180)),
+        ("1y",  pd.Timedelta(days=365)),
+        ("2y",  pd.Timedelta(days=730)),
+        ("5y",  pd.Timedelta(days=1825)),
+        ("10y", pd.Timedelta(days=3650)),
+    ]
+    for label, delta in candidates:
+        if span <= delta:
+            return label
+    if span <= ytd_delta:
+        return "ytd"
+    return "max"

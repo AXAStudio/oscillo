@@ -25,56 +25,91 @@ async def fetch_full_data(
     tickers: Union[str, list],
     period: str = "1d",
     interval: str = "1m",
-    timeout: int = 10
+    timeout: int = 10,
+    *,
+    auto_adjust: bool = True,
+    prepost: bool = False,
 ) -> Dict[str, pd.DataFrame]:
     """
     Fetch full OHLCV data from yfinance with caching.
-    Returns a dictionary of {ticker: DataFrame}.
+    Returns a dict {ticker: DataFrame}, index tz-aware UTC.
+    Cache is keyed by (sorted tickers, period, interval, auto_adjust, prepost).
     """
-    if isinstance(tickers, list):
-        tickers = ','.join(tickers)
+    import pandas as pd
+    import yfinance as yf
+    import asyncio, time
 
-    tickers_key = tickers.strip().upper()
+    # Normalize ticker list & cache key
+    if isinstance(tickers, str):
+        tickers_list = [t.strip().upper() for t in tickers.split(",") if t.strip()]
+    else:
+        tickers_list = [t.strip().upper() for t in tickers if t.strip()]
+
+    tickers_list = sorted(set(tickers_list))
+    if not tickers_list:
+        return {}
+
+    key = "|".join([
+        ",".join(tickers_list),
+        f"period={period}",
+        f"interval={interval}",
+        f"auto_adjust={int(bool(auto_adjust))}",
+        f"prepost={int(bool(prepost))}",
+    ])
+
     now = time.time()
+    if key in _cache and (now - _cache[key]["timestamp"] < CACHE_TTL):
+        return _cache[key]["data"]
 
-    # Serve from cache if still valid
-    if tickers_key in _cache and (now - _cache[tickers_key]["timestamp"] < CACHE_TTL):
-        return _cache[tickers_key]["data"]
+    # yfinance: use a **space-separated** ticker string
+    ticker_str = " ".join(tickers_list)
 
-    # Fetch data with timeout
-    data: pd.DataFrame = await asyncio.wait_for(
+    # Do the download in a thread (async safe)
+    df: pd.DataFrame = await asyncio.wait_for(
         asyncio.to_thread(
             yf.download,
-            tickers=" ".join(tickers_key.split(",")),
+            tickers=ticker_str,
             period=period,
             interval=interval,
-            progress=False
+            group_by="ticker",       # ensure first level = ticker
+            auto_adjust=auto_adjust, # silence the FutureWarning & be explicit
+            prepost=prepost,         # regular-hours default; set True if you want RTH+AH
+            progress=False,
         ),
-        timeout=timeout
+        timeout=timeout,
     )
 
+    # Normalize to per-ticker frames with tz-aware UTC index
     results: Dict[str, pd.DataFrame] = {}
-    ticker_list = tickers_key.split(",")
 
-    if isinstance(data.columns, pd.MultiIndex):
-        # Multi-ticker format
-        for ticker in ticker_list:
-            try:
-                df = data.xs(ticker, axis=1, level=1)  # extract one ticker's data
-                results[ticker] = df
-            except KeyError:
-                results[ticker] = pd.DataFrame()
+    # yfinance with group_by="ticker" yields a MultiIndex whose first level is the ticker.
+    # For a single ticker, columns are flat; handle both cases.
+    if isinstance(df.columns, pd.MultiIndex):
+        # Expected: top level = ticker, second level = OHLCV
+        for t in tickers_list:
+            if t in df.columns.get_level_values(0):
+                sub = df[t].copy()
+                # Ensure tz-aware UTC
+                if sub.index.tz is None:
+                    sub.index = sub.index.tz_localize("UTC")
+                else:
+                    sub.index = sub.index.tz_convert("UTC")
+                results[t] = sub
+            else:
+                results[t] = pd.DataFrame(index=pd.DatetimeIndex([], tz="UTC"))
     else:
-        # Single-ticker format
-        results[ticker_list[0]] = data
+        # Single ticker case
+        sub = df.copy()
+        if sub.index.tz is None:
+            sub.index = sub.index.tz_localize("UTC")
+        else:
+            sub.index = sub.index.tz_convert("UTC")
+        results[tickers_list[0]] = sub
 
-    # Store in cache
-    _cache[tickers_key] = {
-        "data": results,
-        "timestamp": now
-    }
-
+    # Store in cache with the full key
+    _cache[key] = {"data": results, "timestamp": now}
     return results
+
 
 
 async def fetch_last_single(ticker: str, period: str, interval: str, timeout: int):
