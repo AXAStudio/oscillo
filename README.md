@@ -20,17 +20,8 @@ Lightweight platform for basic portfolio tracking & paper trading.
 #### Infrastructure & DevOps
 
 *   **Cloud Provider:** Vercel
-*   **Containerization:** Docker*
 *   **CI/CD:** GitHub Actions
 
 #### Other Tools
 
 *   **Version Control:** Git, GitHub
-*   **API Testing:** Postman
-
-## TODO
-
-* Add RLS for supabase
-* Ensure defaults are properly added for supabase
-* Endpoints for price history at portfolio level & asset level
-* Make a get route for portfolio orders
