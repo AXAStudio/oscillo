@@ -111,7 +111,7 @@ export const OrderForm = ({ ticker = '', onSubmit }: OrderFormProps) => {
     setNotes('');
 
     toast({
-      title: 'Order Placed',
+      title: 'Placing Order...',
       description: `${orderType} order for ${quantity} shares of ${orderTicker} at ${formatCurrency(price)}`,
     });
   };
@@ -185,7 +185,7 @@ export const OrderForm = ({ ticker = '', onSubmit }: OrderFormProps) => {
             </div>
           </div>
 
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="notes">Notes (optional)</Label>
             <Textarea
               id="notes"
@@ -195,7 +195,7 @@ export const OrderForm = ({ ticker = '', onSubmit }: OrderFormProps) => {
               className="bg-card resize-none"
               rows={3}
             />
-          </div>
+          </div> */}
 
           <Button
             type="submit"

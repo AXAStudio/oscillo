@@ -79,7 +79,6 @@ export const OrdersTable = ({ orders, onExport }: OrdersTableProps) => {
       'Quantity',
       'Price',
       'Cost',
-      'Notes',
     ];
 
     const csvEscape = (val: unknown) => {
@@ -216,7 +215,6 @@ export const OrdersTable = ({ orders, onExport }: OrdersTableProps) => {
                 </div>
               </TableHead>
               <TableHead className="font-medium text-right">Cost</TableHead>
-              <TableHead className="font-medium">Notes</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -258,7 +256,6 @@ export const OrdersTable = ({ orders, onExport }: OrdersTableProps) => {
                     <TableCell className="text-right">{qty}</TableCell>
                     <TableCell className="text-right">{formatCurrency(order.price)}</TableCell>
                     <TableCell className="text-right font-medium">{formatCurrency(cost)}</TableCell>
-                    <TableCell className="text-muted-foreground">—</TableCell>
                   </TableRow>
                 );
               })

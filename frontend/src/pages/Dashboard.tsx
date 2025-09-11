@@ -5,7 +5,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { User } from '@supabase/supabase-js';
 import { USE_MOCK_DATA } from '@/App';
-import { Settings, LogOut, Plus, Menu, X, Home, TrendingUp } from 'lucide-react';
+import { Settings, LogOut, Plus, Menu, X, Home, TrendingUp, Loader2} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -482,14 +482,29 @@ const Dashboard = () => {
     setSelectedPortfolioId(p?.id ?? null);
   }, []);
 
+  const LoadingScreen = ({ message = 'Loading dashboard…' }: { message?: string }) => (
+    <div className="flex h-screen items-center justify-center p-6" aria-busy="true" aria-live="polite">
+      <div className="w-full max-w-3xl space-y-8 text-center">
+        {/* Brand + Spinner */}
+        <div className="flex items-center justify-center gap-3">
+          <img
+            src="/logo-192x192.png"
+            alt="Oscillo logo"
+            className="h-10 w-10 rounded-lg object-cover"
+          />
+          <div className="flex items-center gap-2 text-foreground">
+            <Loader2 className="h-5 w-5 animate-spin" />
+            <span className="font-medium">{message}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );  
+
   // Loading / auth guards to prevent flicker
   if (authLoading || portfoliosLoading) {
     dlog('Rendering Loading screen', { authLoading, portfoliosLoading });
-    return (
-      <div className="flex h-screen items-center justify-center p-4">
-        <div className="text-center text-muted-foreground">Loading dashboard…</div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (!selectedPortfolio) {
