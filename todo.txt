@@ -1,7 +1,3 @@
-Bugs (difficulty rating 1-3)
-- Performance return improvement:
-- - P&L (both value and percent) doesn't show properly for holdings table (3)
-
-Features not implemented yet
+Tentative Features
 - notifications (weekly LLM summary, order confirmations) (3)
 - notes for orders (2)
