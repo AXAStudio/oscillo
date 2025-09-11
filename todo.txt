@@ -1,3 +1,5 @@
+In-Progress Features
+- notes for orders (2)
+
 Tentative Features
 - notifications (weekly LLM summary, order confirmations) (3)
-- notes for orders (2)
