@@ -91,7 +91,7 @@ const Settings = () => {
               />
             </div>
             <p className="text-sm text-muted-foreground">
-              Email cannot be changed. Contact support for assistance.
+              Email cannot be changed.
             </p>
           </div>
         </Card>
@@ -111,8 +111,8 @@ const Settings = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="font-medium text-foreground">Daily Summary</p>
-                <p className="text-sm text-muted-foreground">Receive daily portfolio updates</p>
+                <p className="font-medium text-foreground">Weekly Summary</p>
+                <p className="text-sm text-muted-foreground">Receive weekly portfolio updates</p>
               </div>
               <Switch />
             </div>

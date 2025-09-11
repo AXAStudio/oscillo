@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ArrowUpDown, ArrowUp, ArrowDown, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,30 @@ export const HoldingsTable = ({ positions, onExport }: HoldingsTableProps) => {
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [hiddenColumns, setHiddenColumns] = useState<Set<string>>(new Set());
 
+  // Derive all-time P&L fields from avg_cost and quantity
+  const computedPositions = useMemo(() => {
+    const toNum = (v: unknown, fallback = 0) =>
+    Number.isFinite(Number(v)) ? Number(v) : fallback;
+    return (positions ?? []).map((p) => {
+      const qty = toNum(p.quantity);
+      const avg = toNum(p.avg_cost);
+      const price = toNum(p.current_price);
+
+      const market_value = price * qty;
+      const cost_basis   = avg * qty;
+      const pnl          = market_value - cost_basis;
+      // Use |cost_basis| in the denominator so shorts/edge-cases don't flip sign weirdly
+      const pnl_percentage = cost_basis !== 0 ? (pnl / Math.abs(cost_basis)) * 100 : 0;
+
+      return {
+        ...p,
+        market_value,
+        pnl,
+        pnl_percentage,
+      };
+    });
+  }, [positions]);
+
   const handleSort = (key: SortKey) => {
     if (sortKey === key) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -37,7 +61,7 @@ export const HoldingsTable = ({ positions, onExport }: HoldingsTableProps) => {
     }
   };
 
-  const sortedPositions = [...positions].sort((a, b) => {
+  const sortedPositions = [...computedPositions].sort((a, b) => {
     const aVal = a[sortKey];
     const bVal = b[sortKey];
     if (aVal === undefined || bVal === undefined) return 0;
