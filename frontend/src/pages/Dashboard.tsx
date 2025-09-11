@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils';
 import { mockPortfolios, mockPositions, generatePerformanceData, mockOrders } from '@/lib/mock-data';
 import type { Portfolio } from '@/lib/api';
 import { api } from '@/lib/api';
-import { transformPositions, transformOrders, transformMarketQuotes, transformPerformanceData } from '@/lib/api-adapters';
+import { transformPositions, transformOrders, transformMarketQuotes, transformPerformanceData, getCashPosition } from '@/lib/api-adapters';
 import { calculatePortfolioMetrics } from '@/lib/portfolio-utils';
 
 type Period = '1D' | '1W' | '1M' | 'YTD' | '1Y' | 'ALL';
@@ -338,7 +338,34 @@ const Dashboard = () => {
     },
     enabled: !!selectedPortfolioId,
   });
+  
   useEffect(() => { dlog('ordersAll query state:', { ordersAllStatus, len: ordersAll.length }); }, [ordersAllStatus, ordersAll]);
+
+  // cash position
+  const { data: cashPosition = 0 } = useQuery({
+    queryKey: ['cash-position', selectedPortfolioId],
+    queryFn: async () => {
+      if (!selectedPortfolioId) return 0;
+      if (USE_MOCK_DATA) return 0; // we'll derive from positions in the memo below
+      const { data, error } = await supabase
+        .from('positions')
+        .select('quantity')
+        .eq('portfolio_id', selectedPortfolioId)
+        .eq('ticker', 'CA$H')
+        .maybeSingle();
+      if (error) throw error;
+      return data?.quantity || 0;
+    },
+    enabled: !!selectedPortfolioId,
+  });
+
+  const cashHoldings = useMemo(() => { // cash holdings for use in KPIs
+    // Prefer the live query (kept fresh by CashDialog’s invalidations).
+    // Fall back to adapter-derived value from positions if needed.
+    const derived = getCashPosition(positions) ?? 0;
+    if (USE_MOCK_DATA) return derived;
+    return (Number.isFinite(cashPosition) ? cashPosition : derived) as number;
+  }, [cashPosition, positions]);
 
   // Derive average cost per ticker from full order history and overlay into positions
   const positionsForUI = useMemo(() => {
@@ -717,14 +744,7 @@ const Dashboard = () => {
           <ScrollArea className="flex-1">
             <div className="p-4 md:p-6 space-y-4 md:space-y-6">
               {/* KPI Cards */}
-              <div className="grid gap-3 md:gap-4 grid-cols-2 lg:grid-cols-4">
-                <KpiCard
-                  title="Portfolio Market Value (not incl. cash)"
-                  value={portfolioMetrics.currentValue}
-                  format="currency"
-                  tooltip="Current market value of all holdings"
-                  className="col-span-2 md:col-span-1"
-                />
+              <div className="grid gap-3 md:gap-4 grid-cols-1 lg:grid-cols-3">
                 <KpiCard
                   title={`${getPeriodLabel(selectedPeriod)} P&L`}
                   value={periodPnL.value}
@@ -734,22 +754,16 @@ const Dashboard = () => {
                   tooltip={`Profit/loss for the selected ${getPeriodLabel(selectedPeriod).toLowerCase()} period`}
                 />
                 <KpiCard
-                  title="Total P&L"
-                  value={portfolioMetrics.totalPnl}
-                  change={portfolioMetrics.totalPnlPercentage}
+                  title="Securities Holdings (Market Value)"
+                  value={portfolioMetrics.currentValue}
                   format="currency"
-                  changeType="percent"
-                  tooltip="All-time profit/loss"
+                  tooltip="Current market value of all holdings"
                 />
                 <KpiCard
-                  title="Total Return"
-                  value={portfolioMetrics.totalPnlPercentage}
-                  format="percent"
-                  tooltip="Total return percentage"
-                  className={cn(
-                    "col-span-2 md:col-span-1",
-                    portfolioMetrics.totalPnlPercentage >= 0 ? 'border-success/20' : 'border-destructive/20'
-                  )}
+                  title="Cash Holdings"
+                  value={cashHoldings}
+                  format="currency"
+                  tooltip="Current cash holdings"
                 />
               </div>
 

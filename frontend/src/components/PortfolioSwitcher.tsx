@@ -29,6 +29,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Portfolio } from '@/lib/api';
 import { formatCurrency } from '@/lib/format';
+import { useQueries } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { USE_MOCK_DATA } from '@/App';
 
 interface PortfolioSwitcherProps {
   portfolios: Portfolio[];
@@ -59,6 +62,34 @@ export const PortfolioSwitcher = ({
     }
   };
 
+  // Fetch cash per portfolio (kept fresh by CashDialog invalidations)
+  const cashQueries = useQueries({
+    queries: (portfolios ?? []).map((p) => ({
+      queryKey: ['cash-position', p.id],
+      queryFn: async () => {
+        if (!p?.id) return 0;
+        if (USE_MOCK_DATA) return 0;
+        const { data, error } = await supabase
+          .from('positions')
+          .select('quantity')
+          .eq('portfolio_id', p.id)
+          .eq('ticker', 'CA$H')
+          .maybeSingle();
+        if (error) throw error;
+        return data?.quantity || 0;
+      },
+      enabled: !!p?.id,
+      staleTime: 30_000,
+    })),
+  });
+
+  // Build a quick lookup: portfolioId -> cash
+  const cashById: Record<string, number> = {};
+  portfolios.forEach((p, i) => {
+    const v = cashQueries[i]?.data;
+    cashById[p.id] = Number.isFinite(v as number) ? (v as number) : 0;
+  });
+
   return (
     <Dialog open={showNewPortfolioDialog} onOpenChange={setShowNewPortfolioDialog}>
       <Popover open={open} onOpenChange={setOpen}>
@@ -84,7 +115,7 @@ export const PortfolioSwitcher = ({
             <CommandInput placeholder="Search portfolio..." />
             <CommandList>
               <CommandEmpty>No portfolio found.</CommandEmpty>
-              <CommandGroup heading="Portfolios">
+              <CommandGroup heading="Portfolios (Total • Securities)">
                 {portfolios.map((portfolio) => (
                   <CommandItem
                     key={portfolio.id}
@@ -106,7 +137,13 @@ export const PortfolioSwitcher = ({
                     <div className="flex-1">
                       <div className="font-medium">{portfolio.name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {formatCurrency(portfolio.present_value || 0)}
+                      {(() => {
+                        const cash = cashById[portfolio.id] ?? 0;
+                        const securities = portfolio.present_value || 0;
+                        const total = securities + cash;
+                        // Example display: "$123,456 total • $120,000 securities • $3,456 cash"
+                        return `${formatCurrency(total)} • ${formatCurrency(securities)}`; // • ${formatCurrency(cash)}`;
+                      })()}
                       </div>
                     </div>
                     {onDelete && (
