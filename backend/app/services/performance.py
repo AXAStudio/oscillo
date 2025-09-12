@@ -157,8 +157,8 @@ async def get_portfolio_data(
     now_utc = pd.Timestamp(now_dt).tz_convert("UTC")
 
     # ---- Orders ----
-    # raw_orders = await get_all_orders(portfolio_id_str)
-    from test_data import ORDERS as raw_orders
+    raw_orders = get_all_orders(portfolio_id_str)
+    # from tests.test_data import ORDERS as raw_orders
     orders = clean_orders_df(raw_orders).copy()
 
     # ---- Granularity -> intended (period, interval) ----
