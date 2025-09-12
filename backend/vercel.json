@@ -1,33 +1,17 @@
 {
-  "headers": [
-    {
-      "source": "/vercel-config-cors",
-      "headers": [
-        {
-          "key": "Access-Control-Allow-Origin",
-          "value": "https://rrv7.vercel.app"
-        },
-        {
-          "key": "Access-Control-Allow-Methods",
-          "value": "GET, POST, PUT, DELETE, OPTIONS"
-        },
-        {
-          "key": "Access-Control-Allow-Headers",
-          "value": "Content-Type, Authorization"
-        }
-      ]
+  "functions": {
+    "main.py": {
+      "runtime": "python3.11"
     }
-  ],
-  "builds": [
-    {
-      "src": "main.py",
-      "use": "@vercel/python"
-    }
-  ],
+  },
   "routes": [
     {
-      "src": "/(.*)",
-      "dest": "main.py"
+      "src": "/api/1.0/(.*)",
+      "headers": {
+        "Access-Control-Allow-Origin": "https://oscillo.vercel.app/",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type, Authorization"
+      }
     }
   ]
 }
