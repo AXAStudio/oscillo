@@ -8,5 +8,13 @@ from app.configs import config
 
 
 def setup_logger():
-    return logging.getLogger(config.LOGGER)
+    logger = logging.getLogger(config.LOGGER)
+
+    if not logger.handlers:
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+        )
+
+    return logger
 
