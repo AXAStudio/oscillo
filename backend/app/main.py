@@ -4,6 +4,8 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.routers import general
+
 from app.routers import orders
 from app.routers import market
 from app.routers import portfolios
@@ -37,6 +39,7 @@ def build_app():
     )
 
     # Include routes
+    api.include_router(general.router)
     api.include_router(market.router)
     api.include_router(portfolios.router)
     api.include_router(orders.router)
