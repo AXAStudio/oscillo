@@ -1,3 +1,4 @@
+import os
 import logging
 
 from fastapi import FastAPI
@@ -24,8 +25,7 @@ def build_app():
     )
 
     origins = [
-        "http://localhost",
-        "http://localhost:8080",
+        os.getenv("FRONTEND_URL", "http://localhost:8080"),
     ]
 
     api.add_middleware(
