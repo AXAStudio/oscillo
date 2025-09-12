@@ -6,8 +6,8 @@ from fastapi import APIRouter, Request, Response
 
 
 router = APIRouter(
-    prefix="/market",
-    tags=["Market Data"],
+    prefix="/general",
+    tags=["General"],
     responses={404: {"description": "Not found"}}
 )
 
