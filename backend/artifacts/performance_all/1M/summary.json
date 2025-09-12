@@ -1,9 +1,0 @@
-{
-  "period": "1M",
-  "backend_granularity": "1M",
-  "window_start_utc": "2025-08-11T14:00:00.000000Z",
-  "window_end_utc": "2025-09-05T19:30:00.000000Z",
-  "n_points": 246,
-  "first_value": 10000.0,
-  "last_value": 11400.995952758789
-}
