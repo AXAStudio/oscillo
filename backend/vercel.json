@@ -1,14 +1,14 @@
 {
   "functions": {
-    "main.py": {
-      "runtime": "python3.11"
+    "api/**/*.py": {
+      "runtime": "python3.11.x"
     }
   },
   "routes": [
     {
       "src": "/api/1.0/(.*)",
       "headers": {
-        "Access-Control-Allow-Origin": "https://oscillo.vercel.app/",
+        "Access-Control-Allow-Origin": "https://oscillo.vercel.app",
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization"
       }
